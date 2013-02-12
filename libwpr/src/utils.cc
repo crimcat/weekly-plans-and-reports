@@ -106,34 +106,34 @@ namespace wpr {
     	 */
         checksum_t
         calc_crc32(checksum_t ival, const std::string& filename) {
-        	static unsigned int crc_table[256] = { 0 };
-        	static bool is_initialized = false;
-        	static const unsigned int POLY = 0xEDB88320;
+            static unsigned int crc_table[256] = { 0 };
+            static bool is_initialized = false;
+            static const unsigned int POLY = 0xEDB88320;
 
-        	if(!is_initialized) {
-        		for(unsigned int i = 0; i < 256; ++i) {
-        			unsigned int crc = i;
-        			for(unsigned j = 0; j < 8; ++j) {
-        				crc = (crc & 1) ? ((crc >> 1) ^ POLY) : (crc >> 1);
-        			}
-        			crc_table[i] = crc;
-        		}
-        		is_initialized = true;
-        	}
+            if(!is_initialized) {
+                for(unsigned int i = 0; i < 256; ++i) {
+                    unsigned int crc = i;
+                    for(unsigned j = 0; j < 8; ++j) {
+                        crc = (crc & 1) ? ((crc >> 1) ^ POLY) : (crc >> 1);
+                    }
+                    crc_table[i] = crc;
+                }
+                is_initialized = true;
+            }
 
-        	unsigned int crc = ival ? (ival ^ 0xFFFFFFFF) : 0xFFFFFFFF;
+            unsigned int crc = ival ? (ival ^ 0xFFFFFFFF) : 0xFFFFFFFF;
 
-        	// scan file and calculate the checksum
-        	std::ifstream fos(filename.c_str(), std::ios::in);
-        	if(fos.good()) {
-        		while(true) {
-        			unsigned int c = fos.get();
-        			if(!fos.eof()) {
-        				crc = crc_table[(crc ^ c) & 0xFF] ^ (crc >> 8);
-        			} else break;
-        		}
-        		fos.close();
-        	}
+            // scan file and calculate the checksum
+            std::ifstream fos(filename.c_str(), std::ios::in);
+            if(fos.good()) {
+                while(true) {
+                    unsigned int c = fos.get();
+                    if(!fos.eof()) {
+                        crc = crc_table[(crc ^ c) & 0xFF] ^ (crc >> 8);
+                    } else break;
+                }
+                fos.close();
+            }
             return crc ^ 0xFFFFFFFF;
         }
 
@@ -153,13 +153,13 @@ namespace wpr {
 
         bool
         does_file_exist(const std::string &path) {
-        	struct stat sbuf;
-        	return 0 == stat(path.c_str(), &sbuf);
+            struct stat sbuf;
+            return 0 == stat(path.c_str(), &sbuf);
         }
 
         bool
         remove_file(const std::string &path) {
-        	return 0 == unlink(path.c_str());
+            return 0 == unlink(path.c_str());
         }
 
     }; // namespace fs
