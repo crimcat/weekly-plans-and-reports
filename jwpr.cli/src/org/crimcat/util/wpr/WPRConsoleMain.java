@@ -54,7 +54,7 @@ public class WPRConsoleMain {
             System.err.println("Run with help command to see help information.");
         } else {
             // process options
-            int argIdx = 0;
+            int argIdx;
             String curArgument = null;
             TaskDate the_date = new TaskDate(); // current date
             // read options first if any
