@@ -56,7 +56,7 @@ public class WPRConsoleMain {
             // process options
             int argIdx;
             String curArgument = null;
-            TaskDate the_date = new TaskDate(); // current date
+            TaskDate theDate = new TaskDate(); // current date
             // read options first if any
             for(argIdx = 0; argIdx < args.length; ) {
                 curArgument = args[argIdx++];
@@ -72,7 +72,7 @@ public class WPRConsoleMain {
                         System.err.println("Error: missing " + OPT_SETDATE + " data and command.");
                         return;
                     }
-                    if(!the_date.fromString(args[argIdx])) {
+                    if(!theDate.fromString(args[argIdx])) {
                         System.err.println("Error: cannot understand the date - " + args[argIdx]);
                         return;
                     }
@@ -86,7 +86,7 @@ public class WPRConsoleMain {
                     }
                     curArgument = null;
                     // move back to the previous Sunday
-                    the_date = the_date.shiftToWeekDay(WeekDay.MONDAY).shift(-1);
+                    theDate = theDate.shiftToWeekDay(WeekDay.MONDAY).shift(-1);
                     date_option_set = true;
                 } else if(OPT_DBDIR.equals(curArgument)) {
                     if(groups_option_set) {
@@ -150,30 +150,30 @@ public class WPRConsoleMain {
             }
             // main switch below: identify command
             try {
-                Weekly w = new Weekly(the_date);
                 // process commands
                 if(CMD_TODAY.equals(curArgument)) {
-                    processCmdToday(w, the_date);
+                    processCmdToday(new Weekly(theDate), theDate);
                 } else if(CMD_DAILY.equals(curArgument)) {
-                    processCmdDaily(w, the_date);
+                    processCmdDaily(new Weekly(theDate), theDate);
                 } else if(CMD_WEEKLY.equals(curArgument)) {
-                    processCmdWeekly(w);
+                    processCmdWeekly(new Weekly(theDate));
                 } else if(CMD_ADD.equals(curArgument)) {
-                    processCmdAdd(w, args, argIdx);
+                    processCmdAdd(new Weekly(theDate), args, argIdx);
                 } else if(CMD_COMPLETE.equals(curArgument)) {
-                    processCmdComplete(w, args, argIdx);
+                    processCmdComplete(new Weekly(theDate), args, argIdx);
                 } else if(CMD_SUMMARY.equals(curArgument)) {
-                    processCmdSummary(w);
+                    processCmdSummary(new Weekly(theDate));
                 } else if(CMD_MEMO.equals(curArgument)) {
-                    processCmdMemo(w);
+                    processCmdMemo(new Weekly(theDate));
                 } else if(CMD_SETMEMO.equals(curArgument)) {
-                    processCmdSetmemo(w, args, argIdx);
+                    processCmdSetmemo(new Weekly(theDate), args, argIdx);
                 } else if(CMD_GROUPS.equals(curArgument)) {
                     processCmdGroups();
+                } else if(CMD_COPY_FROM_THE_PAST.equals(curArgument)) {
+                    processCmdCopyFromThePast();
                 } else {
                     System.err.println("Error: unknown command specified - " + curArgument + ".");
                 }
-                w.sync();
             } catch(IOException ex) {
                 System.err.println("Error: database read/write unrecoverable error.");
             } catch(ChecksumException cex) {
@@ -238,6 +238,7 @@ public class WPRConsoleMain {
     private static final String CMD_MEMO = "memo";
     private static final String CMD_SETMEMO = "set-memo";
     private static final String CMD_GROUPS = "groups";
+    private static final String CMD_COPY_FROM_THE_PAST = "copy-from-the-past";
 
     /**
      * Print help info: utility title and help information.
@@ -312,7 +313,7 @@ public class WPRConsoleMain {
      * @param args array of command line arguments
      * @param argIdx current command line parameter index
      */
-    private static void processCmdAdd(Weekly w, String[] args, int argIdx) {
+    private static void processCmdAdd(Weekly w, String[] args, int argIdx) throws IOException {
         if(!w.isEditable()) {
             System.err.println("Error: can edit only current weekly plan");
         } else {
@@ -322,6 +323,7 @@ public class WPRConsoleMain {
                 String descr = args[argIdx];
                 w.getEditor().addTask(descr);
                 info("Task successfully created.");
+                w.sync();
             }
         }
     }
@@ -333,7 +335,7 @@ public class WPRConsoleMain {
      * @param args array of command line arguments
      * @param argIdx index of current command line parameter
      */
-    private static void processCmdComplete(Weekly w, String[] args, int argIdx) {
+    private static void processCmdComplete(Weekly w, String[] args, int argIdx) throws IOException {
         if(!w.isEditable()) {
             System.err.println("Error: can edit only current weekly plan");
         } else {
@@ -342,21 +344,22 @@ public class WPRConsoleMain {
             } else {
                 try {
                     int idx = Integer.parseInt(args[argIdx]);
-                        if((idx <= 0) || (idx > w.size())) {
-                            System.err.println("Error: cannot identify a task with the index - " + args[argIdx]);
+                    if((idx <= 0) || (idx > w.size())) {
+                        System.err.println("Error: cannot identify a task with the index - " + args[argIdx]);
+                    } else {
+                        TodoTask task = w.taskAt(idx - 1);
+                        if(task.isCompleted()) {
+                            System.err.println("Error: cannot complete already completed task " +
+                                "(id = " + idx + ")");
                         } else {
-                            TodoTask task = w.taskAt(idx - 1);
-                            if(task.isCompleted()) {
-                                System.err.println("Error: cannot complete already completed task " +
-                                    "(id = " + idx + ")");
-                            } else {
-                                w.getEditor().markTaskCompleted(task);
-                                info("Task with id = " + idx + " is completed.");
-                            }
+                            w.getEditor().markTaskCompleted(task);
+                            info("Task with id = " + idx + " is completed.");
+                            w.sync();
                         }
-                    } catch(NumberFormatException nfe) {
-                        System.err.println("Error: cannot parse index value of " + args[argIdx]);
                     }
+                } catch(NumberFormatException nfe) {
+                    System.err.println("Error: cannot parse index value of " + args[argIdx]);
+                }
             }
         }
     }
@@ -415,11 +418,12 @@ public class WPRConsoleMain {
      * @param args array of command line parameters
      * @param argIdx index of current command line parameter
      */
-    private static void processCmdSetmemo(Weekly w, String[] args, int argIdx) {
+    private static void processCmdSetmemo(Weekly w, String[] args, int argIdx) throws IOException {
         if(!w.isEditable()) {
             System.err.println("Error: can edit only current weekly plan");
         } else {
             w.getEditor().setMemo((args.length == argIdx) ? null : args[argIdx]);
+            w.sync();
         }
     }
 
@@ -441,6 +445,36 @@ public class WPRConsoleMain {
             for(File f : dbList) {
                 System.out.println(f.getName());
             }
+        }
+    }
+    
+    /**
+     * Copy uncompleted tasks from previous week to the current one.
+     */
+    private static void processCmdCopyFromThePast() {
+        try {
+            Weekly thisWeek = new Weekly();
+            if(thisWeek.size() != 0) {
+                System.err.println("Error: current week is not empty, cannot copy from previous week");
+            } else {
+                Weekly previousWeek = new Weekly(thisWeek.startedOn().shift(-7));
+                int cnt = 0;
+                for(int i = 0; i < previousWeek.size(); ++i) {
+                    TodoTask tt = previousWeek.taskAt(i);
+                    if(!tt.isCompleted()) {
+                        thisWeek.getEditor().addTask(tt.title());
+                        ++cnt;
+                    }
+                }
+                if(cnt == 0) {
+                    info("Warning: no unfinished tasks found, none is copied");
+                } else {
+                    info("Info: " + cnt + " tasks were copied");
+                    thisWeek.sync();
+                }
+            }
+        } catch(IOException ex) {
+            System.err.println("Error: database read/write unrecoverable error.");
         }
     }
 
@@ -494,6 +528,7 @@ public class WPRConsoleMain {
         System.out.println("\t" + CMD_MEMO + ": show weekly memo");
         System.out.println("\t" + CMD_SETMEMO + " <memo text>: set new weekly memo");
         System.out.println("\t" + CMD_GROUPS + ": print groups list");
+        System.out.println("\t" + CMD_COPY_FROM_THE_PAST + ": copy uncompleted tasks from previous week (works only if current week is empty)");
     }
 
     /**
