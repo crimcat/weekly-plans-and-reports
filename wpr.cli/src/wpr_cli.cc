@@ -147,18 +147,18 @@ main(int argc, char *argv[]) {
         case 'd':
         {
             if(date_selected) {
-                std::cerr << "Error: the date specified several times." << std::endl;
+                std::cerr << "Error: the date specified several times.\n";
                 return -1;
             }
 
             std::stringstream buf(optarg);
             if(!the_date.read(&buf) || (buf.get() && !buf.eof())) {
-                std::cerr << "Error: cannot parse the date of " << optarg << std::endl;
+                std::cerr << "Error: cannot parse the date of " << optarg << "\n";
                 return -1;
             }
             if(wpr::date() < the_date) {
                 std::cerr << "Error: now we do not deal with the future in this app - "
-                          << the_date << std::endl;
+                    << the_date << "\n";
                 return -1;
             }
             date_selected = true;
@@ -169,7 +169,7 @@ main(int argc, char *argv[]) {
             break;
         case 'p':
             if(date_selected) {
-                std::cerr << "Error: the date specified several times." << std::endl;
+                std::cerr << "Error: the date specified several times.\n";
                 return -1;
             }
             the_date.shift_to(wpr::date::MONDAY);
@@ -183,19 +183,19 @@ main(int argc, char *argv[]) {
             verbose = true;
             break;
         default:
-            std::cerr << "Error parsing command line" << std::endl;
+            std::cerr << "Error parsing command line.\n";
             return 1;
         }
     }
     if(optind >= argc) {
-        std::cerr << "No command specified." << std::endl
-                  << "Run with help command to read help information." << std::endl;
+        std::cerr << "No command specified.\n"
+            << "Run with help command to read help information.\n";
     } else {
         const char *cmd = argv[optind++];
         if(!strcmp(cmd, CMD_HELP)) {
             print_title();
             print_help(argc, argv);
-            std::cout << std::endl;
+            std::cout << "\n";
             return 0;
         }
 
@@ -208,13 +208,11 @@ main(int argc, char *argv[]) {
                 if(ENOENT == errno) {
                     // create directory here
                     if(mkdir(wdir.c_str(), 0755)) {
-                        std::cerr << "Error: cannot create database for the specified group"
-                                  << std::endl;
+                        std::cerr << "Error: cannot create database for the specified group.\n";
                         return -1;
                     }
                 } else {
-                    std::cerr << "Error: cannot access database for the specified group"
-                              << std::endl;
+                    std::cerr << "Error: cannot access database for the specified group\n";
                 }
             } else {
                 // check access rights here
@@ -222,7 +220,7 @@ main(int argc, char *argv[]) {
                    !(sb.st_mode & S_IRUSR) ||
                    !(sb.st_mode & S_IWUSR) ||
                    !(sb.st_mode & S_IXUSR)) {
-                    std::cerr << "Error: cannot find database for the specified group" << std::endl;
+                    std::cerr << "Error: cannot find database for the specified group\n";
                     return -1;
                 }
             }
@@ -236,11 +234,11 @@ main(int argc, char *argv[]) {
 
                 int cnt = 0;
                 for(size_t i = 0; i < w->size(); ++i) {
-                    std::cout << (i + 1) << ". " << w->at(i) << std::endl;
+                    std::cout << (i + 1) << ". " << w->at(i) << "\n";
                     ++cnt;
                 }
                 if(!cnt && verbose) {
-                    std::cout << "Nothing found." << std::endl;
+                    std::cout << "Nothing found.\n";
                 }
             }
         } else if(!strcmp(cmd, CMD_TODAY)) {
@@ -251,19 +249,18 @@ main(int argc, char *argv[]) {
                 for(size_t i = 0; i < w->size(); ++i) {
                     if(!w->at(i).is_completed() && (the_date == w->at(i).originated_on())) {
                         if(!first_found) {
-                            std::cout << "Active tasks scheduled on " << the_date << ":" << std::endl;
+                            std::cout << "Active tasks scheduled on " << the_date << ":\n";
                             first_found = true;
                         }
 
                         std::cout << (i + 1) << ". "
                                   << w->at(i).originated_on() << ": "
-                                  << w->at(i).description() << std::endl;
+                                  << w->at(i).description() << "\n";
                         ++cnt;
                     }
                 }
                 if(!cnt && verbose) {
-                    std::cout << "No active tasks found for " << the_date.to_string()
-                              << "." << std::endl;
+                    std::cout << "No active tasks found for " << the_date.to_string() << ".\n";
                 }
             }
         } else if(!strcmp(cmd, CMD_DAILY)) {
@@ -274,19 +271,19 @@ main(int argc, char *argv[]) {
                 for(size_t i = 0; i < w->size(); ++i) {
                     if(!w->at(i).is_completed() && (w->at(i).originated_on() <= the_date)) {
                         if(!first_found) {
-                            std::cout << "Proposed todo plan up to " << the_date << ":" << std::endl;
+                            std::cout << "Proposed todo plan up to " << the_date << ":\n";
                             first_found = true;
                         }
 
                         std::cout << (i + 1) << ". "
-                                  << w->at(i).originated_on() << ": "
-                                  << w->at(i).description() <<std::endl;
+                            << w->at(i).originated_on() << ": "
+                            << w->at(i).description() << "\n";
                         ++cnt;
                     }
                 }
                 if(!cnt && verbose) {
                     std::cout << "No active tasks found up to " << the_date.to_string()
-                              << "." << std::endl;
+                              << ".\n";
                 }
             }
         } else if(!strcmp(cmd, CMD_MEMO)) {
@@ -295,10 +292,10 @@ main(int argc, char *argv[]) {
                 print_week_header(*w);
                 if(!w->memo().length()) {
                     if(verbose) {
-                        std::cout << "No memo record found for this week." << std::endl;
+                        std::cout << "No memo record found for this week.\n";
                     }
                 } else {
-                    std::cout << "Memo text:" << std::endl << w->memo() << std::endl;
+                    std::cout << "Memo text:\n" << w->memo() << "\n";
                 }
             }
         } else if(!strcmp(cmd, CMD_SET_MEMO)) {
@@ -308,37 +305,36 @@ main(int argc, char *argv[]) {
             w = create_weekly(wdir, the_date);
             if(w) {
                 if(!w->is_editable()) {
-                    std::cerr << "Error: cannot edit weeklies in the past" << std::endl;
+                    std::cerr << "Error: cannot edit weeklies in the past.\n";
                 } else {
                     w->get_editor()->set_memo(std::string(memo_text));
                     if(verbose) {
-                        std::cout << "Memo recorded." << std::endl;
+                        std::cout << "Memo recorded.\n";
                     }
                 }
             }
         } else if(!strcmp(cmd, CMD_COMPLETE)) {
             if(optind == argc) {
-                std::cerr << "Error: operation requires task id number" << std::endl;
+                std::cerr << "Error: operation requires task id number.\n";
                 return -1;
             }
             const char *task_id = argv[optind++];
             w = create_weekly(wdir, the_date);
             if(w) {
                 if(!w->is_editable()) {
-                    std::cerr << "Error: cannot edit weeklies in the past" << std::endl;
+                    std::cerr << "Error: cannot edit weeklies in the past.\n";
                 } else {
                     int task_num = std::atoi(task_id);
                     if((task_num < 1) || ((size_t)task_num > w->size())) {
-                        std::cerr << "Error: wrong task id number" << std::endl;
+                        std::cerr << "Error: wrong task id number.\n";
                     } else {
                         if(w->at(task_num - 1).is_completed()) {
                             std::cerr << "Error: cannot complete already completed task (id = "
-                                      << task_num << ")" << std::endl;
+                                << task_num << ")\n";
                         } else {
                             w->get_editor()->at(task_num - 1).complete_it();
                             if(verbose) {
-                                std::cout << "Task with id=" << task_num << " is marked completed"
-                                          << std::endl;
+                                std::cout << "Task with id=" << task_num << " is marked completed.\n";
                             }
                         }
                     }
@@ -346,18 +342,18 @@ main(int argc, char *argv[]) {
             }
         } else if(!strcmp(cmd, CMD_ADD)) {
             if(optind == argc) {
-                std::cerr << "Error: operation requires task description" << std::endl;
+                std::cerr << "Error: operation requires task description.\n";
                 return -1;
             }
             const char *descr = argv[optind++];
             w = create_weekly(wdir, the_date);
             if(w) {
                 if(!w->is_editable()) {
-                    std::cerr << "Error: cannot edit weeklies in the past" << std::endl;
+                    std::cerr << "Error: cannot edit weeklies in the past.\n";
                 } else {
                     w->get_editor()->add_task(std::string(descr));
                     if(verbose) {
-                        std::cout << "New task successfully added." << std::endl;
+                        std::cout << "New task successfully added.\n";
                     }
                 }
             }
@@ -369,8 +365,7 @@ main(int argc, char *argv[]) {
         } else if(!strcmp(cmd, CMD_GROUPS)) {
             DIR *dbdir = opendir(wdir.c_str());
             if(!dbdir) {
-                std::cerr << "Error: cannot read database directory - "
-                          << wdir << std::endl;
+                std::cerr << "Error: cannot read database directory - " << wdir << "\n";
                 return -1;
             }
             int groups_cnt = 0;
@@ -379,7 +374,7 @@ main(int argc, char *argv[]) {
                 if(DT_DIR == direntry->d_type) {
                     if(strcmp(".", direntry->d_name) &&
                        strcmp("..", direntry->d_name)) {
-                        std::cout << direntry->d_name << std::endl;
+                        std::cout << direntry->d_name << "\n";
                         ++groups_cnt;
                     }
                 }
@@ -387,17 +382,17 @@ main(int argc, char *argv[]) {
             }
             closedir(dbdir);
             if(verbose && !groups_cnt) {
-                std::cout << "No groups found." << std::endl;
+                std::cout << "No groups found.\n";
             }
         } else if(!strcmp(cmd, CMD_COPY_FROM_THE_PAST)) {
             if(date_selected) {
-                std::cerr << "Warning: -p option ignored, not applicable" << std::endl;
+                std::cerr << "Warning: -p option ignored, not applicable.\n";
                 the_date = wpr::date();
                 the_date.shift_to(wpr::date::MONDAY);
             }
             w = create_weekly(wdir, the_date);
             if(w->size()) {
-                std::cerr << "Error: current week is not empty, cannot copy" << std::endl;
+                std::cerr << "Error: current week is not empty, cannot copy.\n";
             } else {
                 the_date.shift(-7); // move to the previous Monday
                 wpr::weekly prev(wdir, the_date); // get previous week schedule
@@ -411,22 +406,21 @@ main(int argc, char *argv[]) {
                 }
                 if(verbose) {
                     if(!cnt) {
-                        std::cerr << "Warning: no unfinished tasks found, nothing is copied" << std::endl;
+                        std::cerr << "Warning: no unfinished tasks found, nothing is copied.\n";
                     } else {
-                        std::cerr << cnt << " tasks have been copied" << std::endl;
+                        std::cerr << cnt << " tasks have been copied.\n";
                     }
                 }
             }
         } else {
-            std::cerr << "Error: unknown command " << cmd << std::endl;
+            std::cerr << "Error: unknown command " << cmd << "\n";
             return -1;
         }
         if(w) {
             delete w;
         }
         if(optind != argc) {
-            std::cerr << "Warning: supplied extra commands or parameters are ignored."
-                      << std::endl;
+            std::cerr << "Warning: supplied extra commands or parameters are ignored.\n";
         }
     }
     return 0;
@@ -437,8 +431,7 @@ print_week_header(const wpr::weekly &w) {
     wpr::date end_of_week(w.starting_date());
     end_of_week.shift(6);
     std::cout << "Week " << w.starting_date().week_number()
-              << " - " << w.starting_date() << "..." << end_of_week << ":"
-              << std::endl;
+              << " - " << w.starting_date() << "..." << end_of_week << ":\n";
 }
 
 std::string
@@ -452,40 +445,39 @@ get_default_storage_path() {
 
 void
 print_title() {
-    std::cout << "This is Weekly Plans & Reports. Version 0.1c" << std::endl;
-    std::cout << "Written by Stas Torgashov (mailto:crimcat@yandex.ru)" << std::endl;
+    std::cout << "This is Weekly Plans & Reports. Version 0.1c\n";
+    std::cout << "Written by Stas Torgashov (mailto:crimcat@yandex.ru)\n";
 }
 
 void
 print_help(int argc, char *argv[]) {
-    std::cout << "Usage:" << std::endl
-        << argv[0] << " [options] command [parameters]" << std::endl;
+    std::cout << "Usage:\n" << argv[0] << " [options] command [parameters]\n";
     std::cout << "Options are:\n"
-        << "\t-d, --date <YYYY-MM-DD> - specify date (current or in the past)" << std::endl
-        << "\t-b, --database-path <path> - specify a folder path to store weeklies database" << std::endl
-        << "\t-p, --previous-week - select a week before instead of selecting a date" << std::endl
-        << "\t-g, --group <group name> - specify weekly group to use" << std::endl
-        << "\t-v, --verbose - be verbose about additional information in output" << std::endl;
+        << "\t-d, --date <YYYY-MM-DD> - specify date (current or in the past)\n"
+        << "\t-b, --database-path <path> - specify a folder path to store weeklies database\n"
+        << "\t-p, --previous-week - select a week before instead of selecting a date\n"
+        << "\t-g, --group <group name> - specify weekly group to use\n"
+        << "\t-v, --verbose - be verbose about additional information in output\n";
     std::cout << "-d/--date option is used in commands to specify the nearest target date "
-        "where the desired weekly or daily information is requested, it's not used in modification "
-        "commands which are applicable only for the current week." << std::endl;
+        "where the desired weekly or daily information is requested,\nit's not used in modification "
+        "commands which are applicable only for the current week.\n";
     std::cout << "-b/--database-path option specifies the directory path to store weekly "
-        "databases; if this directory does not exist it's created." << std::endl;
-    std::cout << "Commands are:" << std::endl
-        << "\t" << CMD_HELP << ": print this help" << std::endl
-        << "\t" << CMD_WEEKLY << ": print all weekly todo tasks" << std::endl
-        << "\t" << CMD_DAILY << ": print all active tasks" << std::endl
-        << "\t" << CMD_TODAY << ": print active today tasks" << std::endl
-        << "\t" << CMD_MEMO << ": print memo" << std::endl
-        << "\t" << CMD_SET_MEMO << " <memo text>: update memo with the given text" << std::endl
-        << "\t" << CMD_COMPLETE << " <task no>: set task with the given number completed" << std::endl
-        << "\t" << CMD_ADD << " <title>: add new task for today with the given title" << std::endl
-        << "\t" << CMD_SUMMARY << ": generate weekly summary" << std::endl
-        << "\t" << CMD_GROUPS << ": print groups list" << std::endl
-        << "\t" << CMD_COPY_FROM_THE_PAST << ": copy unfinished tasks from the previous week" << std::endl;    
-    std::cout << "\'" << CMD_SET_MEMO << "\', \'" << CMD_COMPLETE << "\', \'" << CMD_ADD << "\', \'" << CMD_COPY_FROM_THE_PAST
-        << "\' commands modify database and so they can be used only for the current week"
-        << std::endl;
+        "databases; if this directory does not exist it's created.\n";
+    std::cout << "Commands are:\n"
+        << "\t" << CMD_HELP << ": print this help\n"
+        << "\t" << CMD_WEEKLY << ": print all weekly todo tasks\n"
+        << "\t" << CMD_DAILY << ": print all active tasks\n"
+        << "\t" << CMD_TODAY << ": print active today tasks\n"
+        << "\t" << CMD_MEMO << ": print memo\n"
+        << "\t" << CMD_SET_MEMO << " <memo text>: update memo with the given text\n"
+        << "\t" << CMD_COMPLETE << " <task no>: set task with the given number completed\n"
+        << "\t" << CMD_ADD << " <title>: add new task for today with the given title\n"
+        << "\t" << CMD_SUMMARY << ": generate weekly summary\n"
+        << "\t" << CMD_GROUPS << ": print groups list\n"
+        << "\t" << CMD_COPY_FROM_THE_PAST << ": copy unfinished tasks from the previous week\n";
+    std::cout << "\'" << CMD_SET_MEMO << "\', \'" << CMD_COMPLETE << "\', \'" << CMD_ADD
+        << "\', \'" << CMD_COPY_FROM_THE_PAST
+        << "\' commands modify database and so they can be used only for the current week\n";
 }
 
 std::ostream &
@@ -511,26 +503,26 @@ print_summary(const wpr::weekly &w) {
         now.shift(6);
     }
     print_week_header(w);
-    std::cout << "Completed tasks:" << std::endl;
+    std::cout << "Completed tasks:\n";
     for(size_t i = 0; i < w.size(); ++i) {
         if(w[i].is_completed()) {
             ++cnt;
-            std::cout << "- " << w[i].description() << std::endl;
+            std::cout << "- " << w[i].description() << "\n";
         }
     }
     if(!cnt && verbose) {
-        std::cout << "  No completed tasks found." << std::endl;
+        std::cout << "  No completed tasks found.\n";
     }
     cnt = 0;
-    std::cout << "Uncompleted tasks or opportunities:" << std::endl;
+    std::cout << "Uncompleted tasks or opportunities:\n";
     for(size_t i = 0; i < w.size(); ++i) {
         if(!w[i].is_completed()) {
             ++cnt;
-            std::cout << "- " << w[i].description() << std::endl;
+            std::cout << "- " << w[i].description() << "\n";
         }
     }
     if(!cnt && verbose) {
-        std::cout << "  No active tasks found." << std::endl;
+        std::cout << "  No active tasks found.\n";
     }
 }
 
@@ -542,9 +534,9 @@ create_weekly(const std::string &workdir, const wpr::date &when) {
     }
     delete w;
     std::cerr << "Error: cannot load database from " << workdir
-        << " for " << when << std::endl;
+        << " for " << when << "\n";
     std::cerr << "Try to check manually .todolist file, or remove"
         " .checksum or .memo file for this date to let the application"
-        " fix the issue by itself." << std::endl;
+        " fix the issue by itself.\n";
     return 0;
 }
