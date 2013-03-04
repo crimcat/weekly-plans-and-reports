@@ -502,6 +502,12 @@ print_summary(const wpr::weekly &w, filtered_ostream &fos) {
     }
 }
 
+/**
+ * Helper function: if weekly object is not valid print error message.
+ * This is just a synonym of wpr::weekly::is_valid().
+ * @param w weekly object reference
+ * @return true if weekly object is value, otherwise returns false
+ */
 bool
 check_weekly_obj(const wpr::weekly &w) {
     if(!w.is_valid()) {
@@ -512,6 +518,10 @@ check_weekly_obj(const wpr::weekly &w) {
     }
     return true;
 }
+
+/*
+ * Execute commands implementations are below. 
+ */
 
 void
 exec_cmd_help(int argc, char *argv[]) {
