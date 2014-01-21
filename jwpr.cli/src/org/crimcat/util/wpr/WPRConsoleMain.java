@@ -136,6 +136,11 @@ public class WPRConsoleMain {
                     groups_option_set = true;
                     curArgument = null;
                 } else {
+                    if(CMD_HELP_CANONICAL.equals(curArgument) ||
+                       CMD_HELP_CANINOCAL_LONG.equals(curArgument)) {
+                        processCmdHelp();
+                        return;
+                    }
                     System.err.println("Unknow option: " + curArgument + ". Exitting.");
                     return;
                 }
@@ -229,6 +234,8 @@ public class WPRConsoleMain {
      * Predefined commands.
      */
     private static final String CMD_HELP = "help";
+    private static final String CMD_HELP_CANONICAL = "-h";
+    private static final String CMD_HELP_CANINOCAL_LONG = "--help";
     private static final String CMD_TODAY = "today";
     private static final String CMD_DAILY = "daily";
     private static final String CMD_WEEKLY = "weekly";
@@ -500,10 +507,10 @@ public class WPRConsoleMain {
             ") " + YEAR);
     }
 
-    private static final String VERSION = "0.1cj";
+    private static final String VERSION = "0.2cj";
     private static final String AUTHOR  = "Stas Torgashov";
-    private static final String YEAR = "2011";
-    private static final String MAILTO = "crimcat@yandex.ru";
+    private static final String YEAR = "2011-2014";
+    private static final String MAILTO = "stas.torgashov@outlook.com";
 
     /**
      * Print utility help.
@@ -518,7 +525,8 @@ public class WPRConsoleMain {
         System.out.println("\t" + OPT_GROUP_SEL + " <group name> - specify the todo group to use");
         System.out.println("\t" + OPT_PREVIOUS_WEEK + " - select previous week instead of selecting a date");
         System.out.println("Commands are:");
-        System.out.println("\t" + CMD_HELP + ": print this help");
+        System.out.println("\t" + CMD_HELP + " (" + CMD_HELP_CANONICAL + ", " + CMD_HELP_CANINOCAL_LONG
+            + "): print this help and exit");
         System.out.println("\t" + CMD_TODAY + ": print all active tasks created today");
         System.out.println("\t" + CMD_DAILY + ": print all today active tasks");
         System.out.println("\t" + CMD_WEEKLY + ": list all weekly tasks with their status");
