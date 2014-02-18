@@ -25,6 +25,7 @@
 package org.crimcat.lib.wpr;
 
 import java.io.*;
+import java.util.Properties;
 import java.util.zip.CRC32;
 
 /**
@@ -39,7 +40,11 @@ public final class DatabaseConfig {
     /**
      * Default directory name for the database files.
      */
-    private static String APP_DEFAULT_DIR_NAME = ".wpr";
+    private static final String APP_DEFAULT_DIR_NAME = ".wpr";
+    /**
+     * Default application config options file name
+     */
+    private static final String APP_CONFIG_FILE_NAME = ".global_config";
 
     /**
      * Get instance of the configuration object. It's a singletone.
@@ -200,6 +205,38 @@ public final class DatabaseConfig {
         }
         return null;
     }
+    
+    /**
+     * Global application options.
+     * Integrated into application database config due to common storage, setup
+     * and access policies.
+     */
+    public interface IGlobalOptions {
+        boolean doCopyFromThePastOnMondays();
+    }
+    
+    /**
+     * Load and get current application global options set as interface.
+     * @return reference to global options object
+     */
+    public IGlobalOptions getGlobalOptions() {
+        if(null == globalConfig) {
+            return new IGlobalOptions() {
+                @Override
+                public boolean doCopyFromThePastOnMondays() {
+                    return false;
+                }
+            };
+        }
+        
+        return new IGlobalOptions() {
+            @Override
+            public boolean doCopyFromThePastOnMondays() {
+                String prop = globalConfig.getProperty(APP_OPTION_AUTO_COPY_FROM_THE_PAST);
+                return "false".equalsIgnoreCase(prop);
+            }
+        };
+    }
 
     /**
      * Ctor: private creation of the object. It just initializes the user
@@ -208,6 +245,24 @@ public final class DatabaseConfig {
     private DatabaseConfig() {
         currentPath = new File(getDefaultDatabasePath());
         currentPath.mkdir();
+        globalConfig = new Properties();
+        String configPath = currentPath + System.getProperty("file.separator") + APP_CONFIG_FILE_NAME;
+        File configFile = new File(configPath);
+        try {
+            if(configFile.exists() && configFile.exists() && configFile.canRead()) {
+                FileInputStream is = new FileInputStream(configFile);
+                globalConfig.load(is);
+                is.close();
+            } else {
+                globalConfig.put(APP_OPTION_AUTO_COPY_FROM_THE_PAST, "false");
+                OutputStream os = new FileOutputStream(configFile);
+                globalConfig.store(os, "");
+                os.flush();
+                os.close();
+            }
+        } catch(FileNotFoundException ffex) {
+        } catch(IOException ioex) {
+        }
     }
 
     /**
@@ -235,7 +290,10 @@ public final class DatabaseConfig {
             fis.close();
         }
     }
-
+    
+    private static final String APP_OPTION_AUTO_COPY_FROM_THE_PAST = "auto-copy-from-the-past";
+    
     // use database path
     private File currentPath = null;
+    private Properties globalConfig = null;
 }

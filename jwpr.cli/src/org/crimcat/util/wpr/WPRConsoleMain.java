@@ -155,23 +155,26 @@ public class WPRConsoleMain {
             }
             // main switch below: identify command
             try {
+                Weekly thisWeek = new Weekly(theDate);
+                // process global options settings if needed
+                processAppOptions(thisWeek);
                 // process commands
                 if(CMD_TODAY.equals(curArgument)) {
-                    processCmdToday(new Weekly(theDate), theDate);
+                    processCmdToday(thisWeek, theDate);
                 } else if(CMD_DAILY.equals(curArgument)) {
-                    processCmdDaily(new Weekly(theDate), theDate);
+                    processCmdDaily(thisWeek, theDate);
                 } else if(CMD_WEEKLY.equals(curArgument)) {
-                    processCmdWeekly(new Weekly(theDate));
+                    processCmdWeekly(thisWeek);
                 } else if(CMD_ADD.equals(curArgument)) {
-                    processCmdAdd(new Weekly(theDate), args, argIdx);
+                    processCmdAdd(thisWeek, args, argIdx);
                 } else if(CMD_COMPLETE.equals(curArgument)) {
-                    processCmdComplete(new Weekly(theDate), args, argIdx);
+                    processCmdComplete(thisWeek, args, argIdx);
                 } else if(CMD_SUMMARY.equals(curArgument)) {
-                    processCmdSummary(new Weekly(theDate));
+                    processCmdSummary(thisWeek);
                 } else if(CMD_MEMO.equals(curArgument)) {
-                    processCmdMemo(new Weekly(theDate));
+                    processCmdMemo(thisWeek);
                 } else if(CMD_SETMEMO.equals(curArgument)) {
-                    processCmdSetmemo(new Weekly(theDate), args, argIdx);
+                    processCmdSetmemo(thisWeek, args, argIdx);
                 } else if(CMD_GROUPS.equals(curArgument)) {
                     processCmdGroups();
                 } else if(CMD_COPY_FROM_THE_PAST.equals(curArgument)) {
@@ -526,17 +529,28 @@ public class WPRConsoleMain {
         System.out.println("\t" + OPT_PREVIOUS_WEEK + " - select previous week instead of selecting a date");
         System.out.println("Commands are:");
         System.out.println("\t" + CMD_HELP + " (" + CMD_HELP_CANONICAL + ", " + CMD_HELP_CANINOCAL_LONG
-            + "): print this help and exit");
-        System.out.println("\t" + CMD_TODAY + ": print all active tasks created today");
-        System.out.println("\t" + CMD_DAILY + ": print all today active tasks");
-        System.out.println("\t" + CMD_WEEKLY + ": list all weekly tasks with their status");
-        System.out.println("\t" + CMD_ADD + " <description>: create new today task with the description");
-        System.out.println("\t" + CMD_COMPLETE + "<index>: mark task completed");
-        System.out.println("\t" + CMD_SUMMARY + ": prepare weekly report");
-        System.out.println("\t" + CMD_MEMO + ": show weekly memo");
-        System.out.println("\t" + CMD_SETMEMO + " <memo text>: set new weekly memo");
-        System.out.println("\t" + CMD_GROUPS + ": print groups list");
-        System.out.println("\t" + CMD_COPY_FROM_THE_PAST + ": copy uncompleted tasks from previous week (works only if current week is empty)");
+            + ") : print this help and exit");
+        System.out.println("\t" + CMD_TODAY + " : print all active tasks created today");
+        System.out.println("\t" + CMD_DAILY + " : print all today active tasks");
+        System.out.println("\t" + CMD_WEEKLY + " : list all weekly tasks with their status");
+        System.out.println("\t" + CMD_ADD + " <description> : create new today task with the description");
+        System.out.println("\t" + CMD_COMPLETE + "<index> : mark task completed");
+        System.out.println("\t" + CMD_SUMMARY + " : prepare weekly report");
+        System.out.println("\t" + CMD_MEMO + " : show weekly memo");
+        System.out.println("\t" + CMD_SETMEMO + " <memo text> : set new weekly memo");
+        System.out.println("\t" + CMD_GROUPS + " : print groups list");
+        System.out.println("\t" + CMD_COPY_FROM_THE_PAST + " : copy uncompleted tasks from previous week (works only if current week is empty)");
+    }
+    
+    private static void processAppOptions(Weekly thisWeek) {
+        DatabaseConfig.IGlobalOptions globalOptions = DatabaseConfig.instance().getGlobalOptions();
+        if(globalOptions.doCopyFromThePastOnMondays()) {
+            if((new TaskDate().weekDay() == WeekDay.MONDAY) && thisWeek.isEditable())
+            {
+                processCmdCopyFromThePast();
+                System.out.println("Note: automatic copy-from-the-past option on Mondays is set on, copy is done");
+            }
+        }
     }
 
     /**
