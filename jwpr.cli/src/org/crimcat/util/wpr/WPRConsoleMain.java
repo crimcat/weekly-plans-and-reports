@@ -230,7 +230,7 @@ public class WPRConsoleMain {
      * @param tt todo task object
      */
     private static void printTodoTaskItemNoStatus(int itemNo, TodoTask tt) {
-        System.out.println(itemNo + ". " + tt.originatedOn() + ": " + tt.title());
+        System.out.println(String.format("[%s] (id:%3d) %s", tt.originatedOn(), itemNo, tt.title()));
     }
 
     /**
