@@ -178,7 +178,7 @@ public class WPRConsoleMain {
                 } else if(CMD_GROUPS.equals(curArgument)) {
                     processCmdGroups();
                 } else if(CMD_COPY_FROM_THE_PAST.equals(curArgument)) {
-                    processCmdCopyFromThePast();
+                    processCmdCopyFromThePast(thisWeek);
                 } else {
                     System.err.println("Error: unknown command specified - " + curArgument + ".");
                 }
@@ -461,9 +461,8 @@ public class WPRConsoleMain {
     /**
      * Copy uncompleted tasks from previous week to the current one.
      */
-    private static void processCmdCopyFromThePast() {
+    private static void processCmdCopyFromThePast(Weekly thisWeek) {
         try {
-            Weekly thisWeek = new Weekly();
             if(thisWeek.size() != 0) {
                 System.err.println("Error: current week is not empty, cannot copy from previous week");
             } else {
@@ -545,9 +544,9 @@ public class WPRConsoleMain {
     private static void processAppOptions(Weekly thisWeek) {
         DatabaseConfig.IGlobalOptions globalOptions = DatabaseConfig.instance().getGlobalOptions();
         if(globalOptions.doCopyFromThePastOnMondays()) {
-            if((new TaskDate().weekDay() == WeekDay.MONDAY) && thisWeek.isEditable())
+            if((new TaskDate().weekDay() == WeekDay.MONDAY) && (0 == thisWeek.size()))
             {
-                processCmdCopyFromThePast();
+                processCmdCopyFromThePast(thisWeek);
                 System.out.println("Note: automatic copy-from-the-past option on Mondays is set on, copy is done");
             }
         }
