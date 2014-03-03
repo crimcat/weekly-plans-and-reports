@@ -220,7 +220,7 @@ public class WPRConsoleMain {
      * @param tt todo task object
      */
     private static void printTodoTaskHeadline(TodoTask tt) {
-        System.out.println("- " + tt.title());
+        System.out.println("\t= " + tt.title());
     }
 
     /**
@@ -382,7 +382,7 @@ public class WPRConsoleMain {
     private static void processCmdSummary(Weekly w) {
         printWeekHeader(w);
         int cnt = 0;
-        System.out.println("COMPLETED:");
+        System.out.println("- List of completed items:");
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
             if(tt.isCompleted()) {
@@ -391,10 +391,10 @@ public class WPRConsoleMain {
             }
         }
         if(0 == cnt) {
-            info("  No completed tasks found.");
+            info("\tNo completed tasks found.");
         }
         cnt = 0;
-        System.out.println("UNCOMPLETED TASKS OR OPPORTUNITIES:");
+        System.out.println("- List of yet open items:");
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
             if(!tt.isCompleted()) {
