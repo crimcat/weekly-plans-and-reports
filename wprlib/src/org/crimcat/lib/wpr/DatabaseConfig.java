@@ -213,6 +213,7 @@ public final class DatabaseConfig {
      */
     public interface IGlobalOptions {
         boolean doCopyFromThePastOnMondays();
+        boolean isVerboseOutput();
     }
     
     /**
@@ -226,6 +227,11 @@ public final class DatabaseConfig {
                 public boolean doCopyFromThePastOnMondays() {
                     return false;
                 }
+
+                @Override
+                public boolean isVerboseOutput() {
+                    return false;
+                }
             };
         }
         
@@ -234,6 +240,12 @@ public final class DatabaseConfig {
             public boolean doCopyFromThePastOnMondays() {
                 String prop = globalConfig.getProperty(APP_OPTION_AUTO_COPY_FROM_THE_PAST);
                 return "false".equalsIgnoreCase(prop);
+            }
+
+            @Override
+            public boolean isVerboseOutput() {
+                String prop = globalConfig.getProperty(APP_OPTION_VERBOSE_OUTPUT);
+                return "true".equalsIgnoreCase(prop);
             }
         };
     }
@@ -255,6 +267,7 @@ public final class DatabaseConfig {
                 is.close();
             } else {
                 globalConfig.put(APP_OPTION_AUTO_COPY_FROM_THE_PAST, "false");
+                globalConfig.put(APP_OPTION_VERBOSE_OUTPUT, "false");
                 OutputStream os = new FileOutputStream(configFile);
                 globalConfig.store(os, "");
                 os.flush();
@@ -292,6 +305,7 @@ public final class DatabaseConfig {
     }
     
     private static final String APP_OPTION_AUTO_COPY_FROM_THE_PAST = "auto-copy-from-the-past";
+    private static final String APP_OPTION_VERBOSE_OUTPUT = "verbose-output";
     
     // use database path
     private File currentPath = null;

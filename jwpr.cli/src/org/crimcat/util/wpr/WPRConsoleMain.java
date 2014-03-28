@@ -269,13 +269,13 @@ public class WPRConsoleMain {
             TodoTask tt = w.taskAt(i);
             if(!tt.isCompleted() && tt.originatedOn().equals(when)) {
                 if(0 == cnt++) {
-                    System.out.println("Active tasks scheduled to be done on " + when.toString() + ":");
+                    System.out.println("Today ToDo on " + when.toString() + ":");
                 }
                 printTodoTaskItemNoStatus(i + 1, tt);
             }
         }
         if(0 == cnt) {
-            info("No active tasks found for " + when.toString() + ".");
+            info("No today plan on " + when.toString());
         }
     }
 
@@ -290,13 +290,13 @@ public class WPRConsoleMain {
             TodoTask tt = w.taskAt(i);
             if(!tt.isCompleted() && (tt.originatedOn().compare(when) <= 0)) {
                 if(0 == cnt++) {
-                    System.out.println("Proposed todo plan up to " + when.toString() + ":");
+                    System.out.println("Daily ToDo up to " + when.toString() + ":");
                 }
                 printTodoTaskItemNoStatus(i + 1, tt);
             }
         }
         if(0 == cnt) {
-            info("No active tasks found up to " + when.toString() + ".");
+            info("No tasks found up to " + when.toString());
         }
     }
 
@@ -549,6 +549,9 @@ public class WPRConsoleMain {
                 processCmdCopyFromThePast(thisWeek);
                 System.out.println("Note: automatic copy-from-the-past option on Mondays is set on, copy is done");
             }
+        }
+        if(globalOptions.isVerboseOutput()) {
+            verbose = true;
         }
     }
 
