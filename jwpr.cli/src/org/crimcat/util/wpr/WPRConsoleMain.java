@@ -1,7 +1,7 @@
 /*
     (Java) Weekly Plans and Reports - simple and handy todo planning tool.
 
-    Copyright (C) 2011  Stas Torgashov
+    Copyright (C) 2011-2014  Stas Torgashov
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -181,6 +181,10 @@ public class WPRConsoleMain {
                     processCmdCopyFromThePast(thisWeek);
                 } else {
                     System.err.println("Error: unknown command specified - " + curArgument + ".");
+                    String possibleCmd = distanceDict.findNearest(curArgument);
+                    if(null != possibleCmd) {
+                        System.err.println("Did you mean \'" + possibleCmd + "\'?");
+                    }
                 }
             } catch(IOException ex) {
                 System.err.println("Error: database read/write unrecoverable error.");
@@ -249,6 +253,21 @@ public class WPRConsoleMain {
     private static final String CMD_SETMEMO = "set-memo";
     private static final String CMD_GROUPS = "groups";
     private static final String CMD_COPY_FROM_THE_PAST = "copy-from-the-past";
+    
+    private static final DistanceDictionary distanceDict = new DistanceDictionary(
+        new String[] {
+            CMD_HELP,
+            CMD_TODAY,
+            CMD_DAILY,
+            CMD_WEEKLY,
+            CMD_ADD,
+            CMD_COMPLETE,
+            CMD_SUMMARY,
+            CMD_MEMO,
+            CMD_SETMEMO,
+            CMD_GROUPS,
+            CMD_COPY_FROM_THE_PAST
+    });
 
     /**
      * Print help info: utility title and help information.
