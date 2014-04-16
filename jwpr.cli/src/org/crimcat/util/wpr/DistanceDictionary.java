@@ -50,7 +50,8 @@ public class DistanceDictionary {
         String nearest = null;
         int distance = 100;
         for(String w : words) {
-            int nextDistance = distanceBetween(word, w);
+            //int nextDistance = calcHammingDistance(word, w);
+            int nextDistance = calcLevensteinDistance(word, w);
             if(distance > nextDistance) {
                 distance = nextDistance;
                 nearest = w;
@@ -68,7 +69,7 @@ public class DistanceDictionary {
      * @param word2 the second word
      * @return Hamming distance between words
      */
-    private int distanceBetween(String word1, String word2) {
+    private int calcHammingDistance(String word1, String word2) {
         int length = Math.min(word1.length(), word2.length());
         int hammingDistance = Math.abs(word1.length() - word2.length());
         for(int i = 0; i < length; i++) {
@@ -77,6 +78,41 @@ public class DistanceDictionary {
             }
         }
         return hammingDistance;
+    }
+    
+    /**
+     * Steps to transform word1 to word2
+     * @param word1
+     * @param word2
+     * @return Levenstein distance
+     */
+    private int calcLevensteinDistance(String word1, String word2) {
+        int N = word1.length();
+        int M = word2.length();
+        int[][] D = new int[N + 1][M + 1];
+        
+        D[0][0] = 0;
+        for(int i = 1; i < M; i++) {
+            D[0][i] = D[0][i - 1] + 1;
+        }
+        for(int i = 1; i < N; i++) {
+            D[i][0] = D[i - 1][0] + 1;
+        }
+        for(int i = 1; i < N; i++) {
+            for(int j = 1; j < M; j++) {
+                char c1 = word1.charAt(i - 1);
+                char c2 = word2.charAt(j - 1);
+                int a11 = D[i - 1][j - 1];
+                if(c1 == c2) {
+                    D[i][j] = a11;
+                } else {
+                    int a01 = D[i][j - 1];
+                    int a10 = D[i - 1][j];
+                    D[i][j] = Math.min(a01, Math.min(a10, a11)) + 1;
+                }
+            }
+        }
+        return D[N][M];
     }
     
     private List<String> words;
