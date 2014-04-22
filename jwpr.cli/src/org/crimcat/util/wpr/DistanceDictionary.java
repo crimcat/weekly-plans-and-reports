@@ -50,17 +50,13 @@ public class DistanceDictionary {
         String nearest = null;
         int distance = 100;
         for(String w : words) {
-            //int nextDistance = calcHammingDistance(word, w);
             int nextDistance = calcLevensteinDistance(word, w);
-            if(distance > nextDistance) {
+            if(nextDistance < distance) {
                 distance = nextDistance;
                 nearest = w;
             }
         }
-        if(null != nearest) {
-            return (distance < (nearest.length() / 2))  ? nearest : null;
-        }
-        return null;
+        return nearest;
     }
     
     /**
@@ -98,8 +94,8 @@ public class DistanceDictionary {
         for(int i = 1; i < N; i++) {
             D[i][0] = D[i - 1][0] + 1;
         }
-        for(int i = 1; i < N; i++) {
-            for(int j = 1; j < M; j++) {
+        for(int i = 1; i < N + 1; i++) {
+            for(int j = 1; j < M + 1; j++) {
                 char c1 = word1.charAt(i - 1);
                 char c2 = word2.charAt(j - 1);
                 int a11 = D[i - 1][j - 1];
