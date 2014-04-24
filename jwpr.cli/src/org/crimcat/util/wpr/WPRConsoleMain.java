@@ -415,7 +415,7 @@ public class WPRConsoleMain {
             info("\tNo completed tasks found.");
         }
         cnt = 0;
-        System.out.println("- List of yet open items:");
+        System.out.println("- List of open items:");
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
             if(!tt.isCompleted()) {
