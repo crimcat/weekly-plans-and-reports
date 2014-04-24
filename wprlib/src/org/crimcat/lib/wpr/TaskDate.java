@@ -148,7 +148,7 @@ public class TaskDate implements Cloneable {
      * if compared with the given one, returns positive value if this one is
      * greater and return 0 if the dates are equal.
      * @param td another date to compare with
-     * @return
+     * @return &lt;0 - less, ==0 - equal, &gt;0 - greater
      */
     public int compare(TaskDate td) {
         return (int)(calTime.getTimeInMillis() - td.calTime.getTimeInMillis());
