@@ -156,8 +156,10 @@ public class WPRConsoleMain {
             // main switch below: identify command
             try {
                 Weekly thisWeek = new Weekly(theDate);
+                
                 // process global options settings if needed
                 processAppOptions(thisWeek);
+                
                 // process commands
                 if(CMD_TODAY.equals(curArgument)) {
                     processCmdToday(thisWeek, theDate);
