@@ -151,7 +151,9 @@ public class TaskDate implements Cloneable {
      * @return &lt;0 - less, ==0 - equal, &gt;0 - greater
      */
     public int compare(TaskDate td) {
-        return (int)(calTime.getTimeInMillis() - td.calTime.getTimeInMillis());
+        final long dateInSeconds = calTime.getTimeInMillis() / 1000L / 60L;
+        final long tdDateInSeconds = td.calTime.getTimeInMillis() / 1000L / 60L;
+        return (int)(dateInSeconds - tdDateInSeconds);
     }
 
     /**
