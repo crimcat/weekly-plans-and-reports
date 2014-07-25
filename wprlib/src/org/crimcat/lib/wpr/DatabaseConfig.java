@@ -24,7 +24,15 @@
 
 package org.crimcat.lib.wpr;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.zip.CRC32;
 
@@ -77,7 +85,7 @@ public final class DatabaseConfig {
      * @return string with the current database path
      */
     public String getCurrentDatabasePath() {
-        return currentPath.getAbsolutePath();
+        return currentPath.toAbsolutePath().toString();
     }
 
     /**
@@ -95,7 +103,7 @@ public final class DatabaseConfig {
      * @return true if database path is successfully set and verified
      */
     public boolean setDatabasePath(String newPath) {
-        File path = new File(newPath);
+        Path path = Paths.get(newPath);
         if(isPathValid(path)) {
             currentPath = path;
             return true;
@@ -118,16 +126,16 @@ public final class DatabaseConfig {
          * Get database todo list file object. The file may not exist at all.
          * @return todo list file object
          */
-        File getTodoListFile() {
-            return todoListFile;
+        Path getTodoListPath() {
+            return todoListPath;
         }
 
         /**
          * Get database memo text file object. The file may not exist at all.
          * @return memo text file object
          */
-        File getMemoFile() {
-            return memoFile;
+        Path getMemoPath() {
+            return memoPath;
         }
 
         /**
@@ -136,12 +144,11 @@ public final class DatabaseConfig {
          * @throws IOException
          */
         boolean verifyChecksum() throws IOException {
-            if(checksumFile.exists()) {
+            if(Files.exists(checksumFilePath) && Files.isReadable(checksumFilePath)) {
                 CRC32 crc32 = new CRC32();
-                updateCRC32(crc32, getMemoFile());
-                updateCRC32(crc32, getTodoListFile());
-                FileReader fr = new FileReader(checksumFile);
-                BufferedReader br = new BufferedReader(fr);
+                updateCRC32(crc32, getMemoPath());
+                updateCRC32(crc32, getTodoListPath());
+                BufferedReader br = Files.newBufferedReader(checksumFilePath);
                 String cksumStr = br.readLine();
                 br.close();
                 return crc32.getValue() == Long.parseLong(cksumStr);
@@ -156,12 +163,11 @@ public final class DatabaseConfig {
          */
         void updateChecksum() throws IOException {
             CRC32 crc32 = new CRC32();
-            updateCRC32(crc32, getMemoFile());
-            updateCRC32(crc32, getTodoListFile());
-            PrintWriter crcFile = new PrintWriter(checksumFile);
-            crcFile.println(crc32.getValue());
-            crcFile.flush();
-            crcFile.close();
+            updateCRC32(crc32, getMemoPath());
+            updateCRC32(crc32, getTodoListPath());
+            BufferedWriter bw = Files.newBufferedWriter(checksumFilePath);
+            bw.write(Long.toUnsignedString(crc32.getValue()));
+            bw.close();;
         }
 
         /**
@@ -171,22 +177,22 @@ public final class DatabaseConfig {
          * @param rootDir file object with the database root directory
          * @throws IOException
          */
-        private DatabaseFilesBundle(TaskDate date, File rootDir) throws IOException {
+        private DatabaseFilesBundle(TaskDate date, Path rootDir) throws IOException {
             String basename = rootDir + System.getProperty("file.separator") + date.toString();
 
-            todoListFile = new File(basename + EXT_TODOLIST);
-            memoFile = new File(basename + EXT_MEMO);
-            checksumFile = new File(basename + EXT_CHECKSUM);
-
-            if(!todoListFile.exists()) {
-                todoListFile.createNewFile();
+            todoListPath = Paths.get(basename + EXT_TODOLIST);
+            memoPath = Paths.get(basename + EXT_MEMO);
+            checksumFilePath = Paths.get(basename + EXT_CHECKSUM);
+            
+            if(!Files.exists(todoListPath)) {
+                Files.createFile(todoListPath);
             }
         }
 
-        // database file objects
-        private File todoListFile = null;
-        private File memoFile = null;
-        private File checksumFile = null;
+        // database file objects paths
+        private Path todoListPath = null;
+        private Path memoPath = null;
+        private Path checksumFilePath = null;
     }
 
     /**
@@ -198,8 +204,8 @@ public final class DatabaseConfig {
      */
     DatabaseFilesBundle getDatabaseBundleForDate(TaskDate date) throws IOException {
         if(isCurrentDatabasePathValid()) {
-            if(!currentPath.exists()) {
-                currentPath.mkdir();
+            if(!Files.exists(currentPath)) {
+                Files.createDirectory(currentPath);
             }
             return new DatabaseFilesBundle(date, currentPath);
         }
@@ -255,23 +261,17 @@ public final class DatabaseConfig {
      * database path.
      */
     private DatabaseConfig() {
-        currentPath = new File(getDefaultDatabasePath());
-        currentPath.mkdir();
-        globalConfig = new Properties();
-        String configPath = currentPath + System.getProperty("file.separator") + APP_CONFIG_FILE_NAME;
-        File configFile = new File(configPath);
         try {
-            if(configFile.exists() && configFile.exists() && configFile.canRead()) {
-                FileInputStream is = new FileInputStream(configFile);
-                globalConfig.load(is);
-                is.close();
+            currentPath = Paths.get(getDefaultDatabasePath());
+            Files.createDirectory(currentPath);
+            globalConfig = new Properties();
+            Path configPath = Paths.get(currentPath + System.getProperty("file.separator") + APP_CONFIG_FILE_NAME);
+            if(Files.exists(configPath) && Files.isReadable(configPath)) {
+                globalConfig.load(Files.newInputStream(configPath));
             } else {
                 globalConfig.put(APP_OPTION_AUTO_COPY_FROM_THE_PAST, "false");
                 globalConfig.put(APP_OPTION_VERBOSE_OUTPUT, "false");
-                OutputStream os = new FileOutputStream(configFile);
-                globalConfig.store(os, "");
-                os.flush();
-                os.close();
+                globalConfig.store(Files.newOutputStream(configPath), "");
             }
         } catch(FileNotFoundException ffex) {
         } catch(IOException ioex) {
@@ -283,8 +283,8 @@ public final class DatabaseConfig {
      * @param dir file object representing the database directory
      * @return true if the database directory is valid and accessible
      */
-    private static boolean isPathValid(File dir) {
-        return dir.exists() && dir.isDirectory() && dir.canRead() && dir.canWrite();
+    private static boolean isPathValid(Path dir) {
+        return Files.exists(dir) && Files.isDirectory(dir) && Files.isReadable(dir) && Files.isWritable(dir);
     }
 
     /**
@@ -294,13 +294,13 @@ public final class DatabaseConfig {
      * @param file file to append its CRC32 to the result
      * @throws IOException
      */
-    private static void updateCRC32(CRC32 crc32, File file) throws IOException {
-        if(file.exists()) {
-            FileInputStream fis = new FileInputStream(file);
-            while(fis.available() > 0) {
-                crc32.update(fis.read());
+    private static void updateCRC32(CRC32 crc32, Path path) throws IOException {
+        if(Files.exists(path, LinkOption.NOFOLLOW_LINKS) && Files.isReadable(path)) {
+            try(InputStream is = Files.newInputStream(path)) {
+                while(is.available() > 0) {
+                    crc32.update(is.read());
+                }
             }
-            fis.close();
         }
     }
     
@@ -308,6 +308,6 @@ public final class DatabaseConfig {
     private static final String APP_OPTION_VERBOSE_OUTPUT = "verbose-output";
     
     // use database path
-    private File currentPath = null;
+    private Path currentPath = null;
     private Properties globalConfig = null;
 }

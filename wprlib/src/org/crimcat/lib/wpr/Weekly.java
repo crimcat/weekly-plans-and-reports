@@ -25,9 +25,9 @@
 package org.crimcat.lib.wpr;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import org.crimcat.lib.wpr.DatabaseConfig.DatabaseFilesBundle;
 
@@ -177,33 +177,34 @@ public class Weekly {
         }
 
         // load memo
-        if(dbbundle.getMemoFile().exists()) {
-            BufferedReader memobr = new BufferedReader(new FileReader(dbbundle.getMemoFile()));
-            StringBuilder memoBuf = new StringBuilder();
-            while(memobr.ready()) {
-                String nextLine = memobr.readLine();
-                if(nextLine.length() > 0) {
-                    memoBuf.append(nextLine);
-                    memoBuf.append('\n');
+        if(Files.exists(dbbundle.getMemoPath())) {
+            StringBuilder memoBuf;
+            try(BufferedReader memobr = Files.newBufferedReader(dbbundle.getMemoPath())) {
+                memoBuf = new StringBuilder();
+                while(memobr.ready()) {
+                    String nextLine = memobr.readLine();
+                    if(nextLine.length() > 0) {
+                        memoBuf.append(nextLine);
+                        memoBuf.append('\n');
+                    }
                 }
             }
-            memobr.close();
             memoText = memoBuf.toString();
         }
 
         // load todos
-        BufferedReader todobr = new BufferedReader(new FileReader(dbbundle.getTodoListFile()));
-        while(todobr.ready()) {
-            String nextLine = todobr.readLine();
-            if(nextLine.length() > 0) {
-                TodoTask tt = new TodoTask("x"); // fake parameters
-                if(!tt.fromString(nextLine)) {
-                    throw new RuntimeException("Cannot parse todo record: " + nextLine);
+        try(BufferedReader todobr = Files.newBufferedReader(dbbundle.getTodoListPath())) {
+            while(todobr.ready()) {
+                String nextLine = todobr.readLine();
+                if(nextLine.length() > 0) {
+                    TodoTask tt = new TodoTask("x"); // fake parameters
+                    if(!tt.fromString(nextLine)) {
+                        throw new RuntimeException("Cannot parse todo record: " + nextLine);
+                    }
+                    tasks.add(tt);
                 }
-                tasks.add(tt);
             }
         }
-        todobr.close();
 
         wasChanged = false;
     }
@@ -216,20 +217,20 @@ public class Weekly {
         // save memo
         if(0 == memo().length()) {
             // delete memo file if no memo found
-            dbbundle.getMemoFile().delete();
+            Files.deleteIfExists(dbbundle.getMemoPath());
         } else {
-            PrintStream memofos = new PrintStream(dbbundle.getMemoFile());
-            memofos.print(memo());
-            memofos.flush();
-            memofos.close();
+            try(PrintStream memos = new PrintStream(Files.newOutputStream(dbbundle.getMemoPath()))) {
+                memos.print(memo());
+                memos.flush();
+            }
         }
-        // save todos
-        PrintStream todofos = new PrintStream(dbbundle.getTodoListFile());
-        for(int i = 0; i < size(); ++i) {
-            todofos.println(taskAt(i));
+         // save todos
+        try(PrintStream todos = new PrintStream(Files.newOutputStream(dbbundle.getTodoListPath()))) {
+            for(int i = 0; i < size(); ++i) {
+                todos.println(taskAt(i));
+            }
+            todos.flush();
         }
-        todofos.flush();
-        todofos.close();
         // update checksum
         dbbundle.updateChecksum();
 
@@ -239,7 +240,7 @@ public class Weekly {
     // Monday date object
     private TaskDate monday = null;
     // List of todo tasks
-    private ArrayList<TodoTask> tasks = new ArrayList<TodoTask>();
+    private final ArrayList<TodoTask> tasks = new ArrayList<>();
     // String with memo text
     private String memoText = "";
     // Weekly changes flag
