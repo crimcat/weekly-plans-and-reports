@@ -222,11 +222,20 @@ public class WPRConsoleMain {
     }
 
     /**
-     * Print todo task headline: only task title with prompt '-'
+     * Print todo task headline: only task title with prompt
      * @param tt todo task object
      */
     private static void printTodoTaskHeadline(TodoTask tt) {
         System.out.println("\t= " + tt.title());
+    }
+    
+    /**
+     * Print todo task headline: only task title with id and prompt
+     * @param id todo task id number
+     * @param tt todo task object
+     */
+    private static void printTodoTaskHeadLineWithId(int id, TodoTask tt) {
+        System.out.println(String.format("\t= (id:%3d) %s", id, tt.title()));
     }
 
     /**
@@ -403,6 +412,19 @@ public class WPRConsoleMain {
     private static void processCmdSummary(Weekly w) {
         printWeekHeader(w);
         int cnt = 0;
+        System.out.println("- List of open items:");
+        for(int i = 0; i < w.size(); ++i) {
+            TodoTask tt = w.taskAt(i);
+            if(!tt.isCompleted()) {
+                printTodoTaskHeadLineWithId(i + 1, tt);
+                ++cnt;
+            }
+        }
+        if(0 == cnt) {
+            info("  No active tasks found.");
+        }
+        
+        cnt = 0;
         System.out.println("- List of completed items:");
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
@@ -413,18 +435,6 @@ public class WPRConsoleMain {
         }
         if(0 == cnt) {
             info("\tNo completed tasks found.");
-        }
-        cnt = 0;
-        System.out.println("- List of open items:");
-        for(int i = 0; i < w.size(); ++i) {
-            TodoTask tt = w.taskAt(i);
-            if(!tt.isCompleted()) {
-                printTodoTaskHeadline(tt);
-                ++cnt;
-            }
-        }
-        if(0 == cnt) {
-            info("  No active tasks found.");
         }
     }
 
