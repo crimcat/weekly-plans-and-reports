@@ -263,7 +263,9 @@ public final class DatabaseConfig {
     private DatabaseConfig() {
         try {
             currentPath = Paths.get(getDefaultDatabasePath());
-            Files.createDirectory(currentPath);
+            if (!Files.exists(currentPath)) {
+                Files.createDirectory(currentPath);
+            }
             globalConfig = new Properties();
             Path configPath = Paths.get(currentPath + System.getProperty("file.separator") + APP_CONFIG_FILE_NAME);
             if(Files.exists(configPath) && Files.isReadable(configPath)) {
