@@ -245,7 +245,7 @@ public final class DatabaseConfig {
             @Override
             public boolean doCopyFromThePastOnMondays() {
                 String prop = globalConfig.getProperty(APP_OPTION_AUTO_COPY_FROM_THE_PAST);
-                return "false".equalsIgnoreCase(prop);
+                return "true".equalsIgnoreCase(prop);
             }
 
             @Override
