@@ -34,11 +34,14 @@ import java.util.List;
  */
 public class DistanceDictionary {
     /**
-     * Initialize distance dictionary from a plain array of words
-     * @param words 
+     * Initialize distance dictionary from a plain array of words and words
+     * distance calculator function
+     * @param words array of words to create the dictionary
+     * @param distCalc distance calculator to use
      */
-    public DistanceDictionary(String[] words) {
+    public DistanceDictionary(String[] words, WordsDistanceCalculators.ICalculator distCalc) {
         this.words = Arrays.asList(words);
+        this.distCalc = distCalc;
     }
     
     /**
@@ -50,7 +53,7 @@ public class DistanceDictionary {
         String nearest = null;
         int distance = 100;
         for(String w : words) {
-            int nextDistance = calcLevensteinDistance(word, w);
+            int nextDistance = distCalc.calcDistance(word, w);
             if(nextDistance < distance) {
                 distance = nextDistance;
                 nearest = w;
@@ -59,57 +62,6 @@ public class DistanceDictionary {
         return nearest;
     }
     
-    /**
-     * Find Hamming distance for two given words.
-     * @param word1 the first word
-     * @param word2 the second word
-     * @return Hamming distance between words
-     */
-    private int calcHammingDistance(String word1, String word2) {
-        int length = Math.min(word1.length(), word2.length());
-        int hammingDistance = Math.abs(word1.length() - word2.length());
-        for(int i = 0; i < length; i++) {
-            if(word1.charAt(i) != word2.charAt(i)) {
-                ++hammingDistance;
-            }
-        }
-        return hammingDistance;
-    }
-    
-    /**
-     * Steps to transform word1 to word2
-     * @param word1
-     * @param word2
-     * @return Levenstein distance
-     */
-    private int calcLevensteinDistance(String word1, String word2) {
-        int N = word1.length();
-        int M = word2.length();
-        int[][] D = new int[N + 1][M + 1];
-        
-        D[0][0] = 0;
-        for(int i = 1; i < M; i++) {
-            D[0][i] = D[0][i - 1] + 1;
-        }
-        for(int i = 1; i < N; i++) {
-            D[i][0] = D[i - 1][0] + 1;
-        }
-        for(int i = 1; i < N + 1; i++) {
-            for(int j = 1; j < M + 1; j++) {
-                char c1 = word1.charAt(i - 1);
-                char c2 = word2.charAt(j - 1);
-                int a11 = D[i - 1][j - 1];
-                if(c1 == c2) {
-                    D[i][j] = a11;
-                } else {
-                    int a01 = D[i][j - 1];
-                    int a10 = D[i - 1][j];
-                    D[i][j] = Math.min(a01, Math.min(a10, a11)) + 1;
-                }
-            }
-        }
-        return D[N][M];
-    }
-    
     private final List<String> words;
+    private final WordsDistanceCalculators.ICalculator distCalc;
 }

@@ -278,7 +278,9 @@ public class WPRConsoleMain {
             CMD_SETMEMO,
             CMD_GROUPS,
             CMD_COPY_FROM_THE_PAST
-    });
+        },
+        WordsDistanceCalculators.LEVENSTEIN
+    );
 
     /**
      * Print help info: utility title and help information.
