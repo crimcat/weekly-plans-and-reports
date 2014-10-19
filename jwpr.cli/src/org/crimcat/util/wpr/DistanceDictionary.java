@@ -111,5 +111,5 @@ public class DistanceDictionary {
         return D[N][M];
     }
     
-    private List<String> words;
+    private final List<String> words;
 }
