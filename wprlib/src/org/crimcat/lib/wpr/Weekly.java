@@ -234,7 +234,7 @@ public class Weekly {
         // update checksum
         dbbundle.updateChecksum();
 
-        wasChanged = true;
+        wasChanged = false;
     }
 
     // Monday date object
