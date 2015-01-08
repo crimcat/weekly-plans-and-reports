@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import org.crimcat.lib.wpr.DatabaseConfig.DatabaseFilesBundle;
+//import org.crimcat.lib.wpr.DatabaseConfig.DatabaseFilesBundle;
 
 /**
  * Weekly database representation.
@@ -170,16 +170,16 @@ public class Weekly {
      * @throws IOException
      */
     private void load() throws IOException {
-        dbbundle = DatabaseConfig.instance().getDatabaseBundleForDate(monday);
+        dbbundle = AppDatabase.getFilesBundle(monday);
         // verify checksum
-        if(!dbbundle.verifyChecksum()) {
+        if(!dbbundle.checkConsistency()) {
             throw new ChecksumException();
         }
 
         // load memo
-        if(Files.exists(dbbundle.getMemoPath())) {
+        if(Files.exists(dbbundle.getMemoFilePath())) {
             StringBuilder memoBuf;
-            try(BufferedReader memobr = Files.newBufferedReader(dbbundle.getMemoPath())) {
+            try(BufferedReader memobr = Files.newBufferedReader(dbbundle.getMemoFilePath())) {
                 memoBuf = new StringBuilder();
                 while(memobr.ready()) {
                     String nextLine = memobr.readLine();
@@ -193,7 +193,7 @@ public class Weekly {
         }
 
         // load todos
-        try(BufferedReader todobr = Files.newBufferedReader(dbbundle.getTodoListPath())) {
+        try(BufferedReader todobr = Files.newBufferedReader(dbbundle.getTodoListFilePath())) {
             while(todobr.ready()) {
                 String nextLine = todobr.readLine();
                 if(nextLine.length() > 0) {
@@ -217,15 +217,15 @@ public class Weekly {
         // save memo
         if(0 == memo().length()) {
             // delete memo file if no memo found
-            Files.deleteIfExists(dbbundle.getMemoPath());
+            Files.deleteIfExists(dbbundle.getMemoFilePath());
         } else {
-            try(PrintStream memos = new PrintStream(Files.newOutputStream(dbbundle.getMemoPath()))) {
+            try(PrintStream memos = new PrintStream(Files.newOutputStream(dbbundle.getMemoFilePath()))) {
                 memos.print(memo());
                 memos.flush();
             }
         }
          // save todos
-        try(PrintStream todos = new PrintStream(Files.newOutputStream(dbbundle.getTodoListPath()))) {
+        try(PrintStream todos = new PrintStream(Files.newOutputStream(dbbundle.getTodoListFilePath()))) {
             for(int i = 0; i < size(); ++i) {
                 todos.println(taskAt(i));
             }
@@ -246,5 +246,5 @@ public class Weekly {
     // Weekly changes flag
     private boolean wasChanged = false;
     // Database manager object reference
-    private DatabaseFilesBundle dbbundle = null;
+    private AppDatabase.FilesBundle dbbundle = null;
 }

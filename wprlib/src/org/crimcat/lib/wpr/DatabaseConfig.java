@@ -165,9 +165,9 @@ public final class DatabaseConfig {
             CRC32 crc32 = new CRC32();
             updateCRC32(crc32, getMemoPath());
             updateCRC32(crc32, getTodoListPath());
-            BufferedWriter bw = Files.newBufferedWriter(checksumFilePath);
-            bw.write(Long.toUnsignedString(crc32.getValue()));
-            bw.close();
+            try (BufferedWriter bw = Files.newBufferedWriter(checksumFilePath)) {
+                bw.write(Long.toUnsignedString(crc32.getValue()));
+            }
         }
 
         /**
