@@ -23,10 +23,7 @@ namespace wprlib.AppDatabase {
     public static class Gate {
 
         public static IAppConfig getAppConfig() {
-            if(null == appConfig) {
-                appConfig = new AppConfigImpl();
-            }
-            return appConfig;
+            return new AppConfigImpl();
         }
 
         public static IFilesBundle getFilesBundle(TaskDate td) {
@@ -59,6 +56,5 @@ namespace wprlib.AppDatabase {
         }
 
         private static string defaultDatabasePath = null;
-        private static IAppConfig appConfig = null;
     }
 }

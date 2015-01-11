@@ -109,7 +109,7 @@ namespace wprlib.AppDatabase {
         }
 
         public bool checkConsistency() {
-            if(File.Exists(todoFilePath)) {
+            if(File.Exists(checkSumPath)) {
                 uint crc = utilities.CRC32.calcFileCRC32(0, memoFilePath);
                 crc = utilities.CRC32.calcFileCRC32(crc, todoFilePath);
                 StreamReader sr = new StreamReader(checkSumPath);
@@ -121,14 +121,12 @@ namespace wprlib.AppDatabase {
         }
 
         public void updateOnChanges() {
-            if(File.Exists(todoFilePath)) {
-                uint crc = utilities.CRC32.calcFileCRC32(0, memoFilePath);
-                crc = utilities.CRC32.calcFileCRC32(crc, todoFilePath);
-                StreamWriter sw = new StreamWriter(checkSumPath);
-                sw.Write(crc);
-                sw.Flush();
-                sw.Close();
-            }
+            uint crc = utilities.CRC32.calcFileCRC32(0, memoFilePath);
+            crc = utilities.CRC32.calcFileCRC32(crc, todoFilePath);
+            StreamWriter sw = new StreamWriter(checkSumPath);
+            sw.Write(crc);
+            sw.Flush();
+            sw.Close();
         }
     }
 }

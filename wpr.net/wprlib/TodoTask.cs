@@ -88,7 +88,7 @@ namespace wprlib {
 
         private static int weekDayToInt(DayOfWeek day) {
             int dayNo = (int)day;
-            return (0 == dayNo) ? 7 : (dayNo - 1);
+            return (0 == dayNo) ? 6 : (dayNo - 1);
         }
 
         private DateTime now;
