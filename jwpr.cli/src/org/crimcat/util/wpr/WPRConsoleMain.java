@@ -25,11 +25,11 @@
 package org.crimcat.util.wpr;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import org.crimcat.lib.wpr.AppDatabase;
 
-import org.crimcat.lib.wpr.ChecksumException;
-import org.crimcat.lib.wpr.DatabaseConfig;
 import org.crimcat.lib.wpr.TaskDate;
 import org.crimcat.lib.wpr.TodoTask;
 import org.crimcat.lib.wpr.Weekly;
@@ -40,161 +40,146 @@ import org.crimcat.lib.wpr.TaskDate.WeekDay;
  * Reads command line and performs actions.
  */
 public class WPRConsoleMain {
-
+    
     /**
      * main function.
      * @param args command line arguments array
      */
     public static void main(String[] args) {
-        boolean dbdir_option_set = false;
-        boolean groups_option_set = false;
-        boolean date_option_set = false;
         if(0 == args.length) {
             System.err.println("No commands specified.");
             System.err.println("Run with help command to see help information.");
         } else {
-            // process options
-            int argIdx;
-            String curArgument = null;
-            TaskDate theDate = new TaskDate(); // current date
-            // read options first if any
-            for(argIdx = 0; argIdx < args.length; ) {
-                curArgument = args[argIdx++];
-                if(!curArgument.startsWith("-")) {
-                    break;
-                }
-                if(OPT_SETDATE.equals(curArgument)) {
-                    if(date_option_set) {
-                        System.err.println("Error: date selected multiple times.");
-                        return;
-                    }
-                    if(args.length <= argIdx) {
-                        System.err.println("Error: missing " + OPT_SETDATE + " data and command.");
-                        return;
-                    }
-                    if(!theDate.fromString(args[argIdx])) {
-                        System.err.println("Error: cannot understand the date - " + args[argIdx]);
-                        return;
-                    }
-                    ++argIdx;
-                    curArgument = null;
-                    date_option_set = true;
-                } else if(OPT_PREVIOUS_WEEK.equals(curArgument)) {
-                    if(date_option_set) {
-                        System.err.println("Error: date selected multiple times.");
-                        return;
-                    }
-                    curArgument = null;
-                    // move back to the previous Sunday
-                    theDate = theDate.shiftToWeekDay(WeekDay.MONDAY).shift(-1);
-                    date_option_set = true;
-                } else if(OPT_DBDIR.equals(curArgument)) {
-                    if(groups_option_set) {
-                        System.err.println("Error: cannot use -b and -g options at the same time.");
-                        return;
-                    }
-                    if(args.length <= argIdx) {
-                        System.err.println("Error: missing " + OPT_DBDIR + " directory argument.");
-                        return;
-                    }
-                    if(!DatabaseConfig.instance().setDatabasePath(args[argIdx])) {
-                        System.err.println("Error: supplied path " + args[argIdx] + " is not valid.");
-                        return;
-                    }
-                    ++argIdx;
-                    curArgument = null;
-                    dbdir_option_set = true;
-                } else if(OPT_VERBOSE.equals(curArgument)) {
-                    curArgument = null;
-                    verbose = true;
-                } else if(OPT_GROUP_SEL.equals(curArgument)) {
-                    if(dbdir_option_set) {
-                        System.err.println("Error: cannot use -b and -g options at the same time.");
-                        return;
-                    }
-                    if(args.length <= argIdx) {
-                        System.err.println("Error: missing " + OPT_GROUP_SEL + " group name argument.");
-                        return;
-                    }
-                    String groupDir = DatabaseConfig.instance().getDefaultDatabasePath() +
-                    System.getProperty("file.separator") +
-                    args[argIdx++];
-                    // check group directory
-                    File groupDirFile = new File(groupDir);
-                    if(!groupDirFile.exists()) {
-                        if(!groupDirFile.mkdir()) {
-                            System.err.println("Error: cannot create directory for the group - " +
-                                groupDir);
-                            return;
+            AppDatabase.Configuration configuration = AppDatabase.getAppConfig();
+            opt_verbose = configuration.doVerboseOuput();
+            opt_do_copy_on_mondays = configuration.doCopyFromThePastOnMondays();
+            
+            List<String> argList = Arrays.asList(args);
+            if(readOptions(argList)) {
+                if(validateOptions()) {
+                    try {
+                        Weekly weekly = opt_groups
+                            ? new Weekly(selectedDate, groupName)
+                            : new Weekly(selectedDate);
+                        if(opt_do_copy_on_mondays) {
+                            if(weekly.isEditable() && (0 == weekly.size()) &&
+                               (TaskDate.WeekDay.MONDAY == selectedDate.weekDay())) {
+                                info("Info: copying items from previous week.");
+                                processCmdCopyFromThePast(weekly);
+                            }
                         }
-                        info("New group " + groupDirFile.getName() + " created.");
+                        readAndExecuteCommand(argList, weekly);
+                    } catch(IOException ex) {
+                        System.err.println("Error: cannot open or process weekly database.");
+                        System.err.println(ex.toString());
                     }
-                    if(!DatabaseConfig.instance().setDatabasePath(groupDir)) {
-                        System.err.println("Error: supplied path " + args[argIdx] + " is not valid.");
-                        return;
-                    }
-                    groups_option_set = true;
-                    curArgument = null;
-                } else {
-                    if(CMD_HELP_CANONICAL.equals(curArgument) ||
-                       CMD_HELP_CANINOCAL_LONG.equals(curArgument)) {
-                        processCmdHelp();
-                        return;
-                    }
-                    System.err.println("Unknow option: " + curArgument + ". Exitting.");
-                    return;
                 }
+            } else {
+                System.err.println("Unknown option or insufficient parameters. See help for information.");
             }
-            if(null == curArgument) {
-                System.err.println("Error: missing command.");
-                return;
-            }
-            if(CMD_HELP.equals(curArgument)) {
+        }
+    }
+
+    private static boolean readOptions(List<String> args) {
+        for(String arg : args) {
+            if(arg.charAt(0) == '-') {
+                switch(args.remove(0)) {
+                    case OPT_DBDIR:
+                        if(0 == args.size()) return false;
+                        if(!AppDatabase.setDefaultAppDatabasePath(args.remove(0))) {
+                            System.err.println("Error: cannot use provided database path in " + OPT_DBDIR + " option.");
+                            return false;
+                        }
+                        break;
+                    case OPT_GROUP_SEL:
+                        if(0 == args.size()) return false;
+                        opt_groups = true;
+                        groupName = args.remove(0);
+                        break;
+                    case OPT_PREVIOUS_WEEK:
+                        opt_prev_week = true;
+                        selectedDate.shiftToWeekDay(WeekDay.MONDAY).shift(-1);
+                        break;
+                    case OPT_SETDATE:
+                        if(0 == args.size()) return false;
+                        opt_date_selection = true;
+                        if(!selectedDate.fromString(args.remove(0))) {
+                            System.err.println("Error: cannot parse date for " + OPT_SETDATE + " option.");
+                            return false;
+                        }
+                        break;
+                    case OPT_VERBOSE:
+                        opt_verbose = true;
+                        break;
+                    default:
+                        return false;
+                }
+            } else break;
+        }
+        return true;
+    }
+    
+    /**
+     * Validate collected options. Should be called after <code>readOptions</code>.
+     * @return true if options are set correctly, otherwise it has false
+     */
+    private static boolean validateOptions() {
+        if(opt_prev_week && opt_date_selection) {
+            System.err.println("Error: cannot use " + OPT_PREVIOUS_WEEK + " and " + OPT_SETDATE + " at the same time.");
+            return false;
+        }
+        return true;
+    }
+    
+    private static void readAndExecuteCommand(List<String> args, Weekly weekly) throws IOException {
+        String expectedCmd = args.remove(0);
+        switch(expectedCmd) {
+            case CMD_ADD:
+                processCmdAdd(weekly, args);
+                break;
+            case CMD_COMPLETE:
+                processCmdComplete(weekly, args);
+                break;
+            case CMD_COPY_FROM_THE_PAST:
+                processCmdCopyFromThePast(weekly);
+                break;
+            case CMD_DAILY:
+                processCmdDaily(weekly);
+                break;
+            case CMD_GROUPS:
+                processCmdGroups();
+                break;
+            case CMD_HELP:
                 processCmdHelp();
-                return;
-            }
-            // main switch below: identify command
-            try {
-                Weekly thisWeek = new Weekly(theDate);
-                
-                // process global options settings if needed
-                processAppOptions(thisWeek);
-                
-                // process commands
-                if(CMD_TODAY.equals(curArgument)) {
-                    processCmdToday(thisWeek, theDate);
-                } else if(CMD_DAILY.equals(curArgument)) {
-                    processCmdDaily(thisWeek, theDate);
-                } else if(CMD_WEEKLY.equals(curArgument)) {
-                    processCmdWeekly(thisWeek);
-                } else if(CMD_ADD.equals(curArgument)) {
-                    processCmdAdd(thisWeek, args, argIdx);
-                } else if(CMD_COMPLETE.equals(curArgument)) {
-                    processCmdComplete(thisWeek, args, argIdx);
-                } else if(CMD_SUMMARY.equals(curArgument)) {
-                    processCmdSummary(thisWeek);
-                } else if(CMD_MEMO.equals(curArgument)) {
-                    processCmdMemo(thisWeek);
-                } else if(CMD_SETMEMO.equals(curArgument)) {
-                    processCmdSetmemo(thisWeek, args, argIdx);
-                } else if(CMD_GROUPS.equals(curArgument)) {
-                    processCmdGroups();
-                } else if(CMD_COPY_FROM_THE_PAST.equals(curArgument)) {
-                    processCmdCopyFromThePast(thisWeek);
-                } else {
-                    System.err.println("Error: unknown command specified - " + curArgument + ".");
-                    String possibleCmd = distanceDict.findNearest(curArgument);
-                    if(null != possibleCmd) {
-                        System.err.println("Did you mean \'" + possibleCmd + "\'?");
-                    }
+                break;
+            case CMD_HELP_CANINOCAL_LONG:
+                processCmdHelp();
+                break;
+            case CMD_HELP_CANONICAL:
+                processCmdHelp();
+                break;
+            case CMD_MEMO:
+                processCmdMemo(weekly);
+                break;
+            case CMD_SETMEMO:
+                processCmdSetmemo(weekly, args);
+                break;
+            case CMD_SUMMARY:
+                processCmdSummary(weekly);
+                break;
+            case CMD_TODAY:
+                processCmdToday(weekly);
+                break;
+            case CMD_WEEKLY:
+                processCmdWeekly(weekly);
+                break;
+            default: {
+                System.err.println("Unknown command: \'" + expectedCmd + "\'.");
+                String possibleCmd = distanceDict.findNearest(expectedCmd);
+                if(possibleCmd != null) {
+                    System.err.println("Did you mean \'" + possibleCmd + "\'?");
                 }
-            } catch(IOException ex) {
-                System.err.println("Error: database read/write unrecoverable error.");
-            } catch(ChecksumException cex) {
-                System.err.println("Error: database checksum verification failed.");
-                System.err.println("Try to check manually .todolist file, or remove" +
-                    " .checksum or .memo file for the date to let the application" +
-                    " fix this issue by itself.");
+                break;
             }
         }
     }
@@ -295,19 +280,19 @@ public class WPRConsoleMain {
      * @param w weekly object to use
      * @param when date which is 'today'
      */
-    private static void processCmdToday(Weekly w, TaskDate when) {
+    private static void processCmdToday(Weekly w) {
         int cnt = 0;
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
-            if(!tt.isCompleted() && tt.originatedOn().equals(when)) {
+            if(!tt.isCompleted() && tt.originatedOn().equals(selectedDate)) {
                 if(0 == cnt++) {
-                    System.out.println("Today ToDo on " + when.toString() + ":");
+                    System.out.println("Today ToDo on " + selectedDate.toString() + ":");
                 }
                 printTodoTaskItemNoStatus(i + 1, tt);
             }
         }
         if(0 == cnt) {
-            info("No today plan on " + when.toString());
+            info("No today plan on " + selectedDate.toString());
         }
     }
 
@@ -316,19 +301,19 @@ public class WPRConsoleMain {
      * @param w weekly object
      * @param when date which is 'today'
      */
-    private static void processCmdDaily(Weekly w, TaskDate when) {
+    private static void processCmdDaily(Weekly w) {
         int cnt = 0;
         for(int i = 0; i < w.size(); ++i) {
             TodoTask tt = w.taskAt(i);
-            if(!tt.isCompleted() && (tt.originatedOn().compare(when) <= 0)) {
+            if(!tt.isCompleted() && (tt.originatedOn().compare(selectedDate) <= 0)) {
                 if(0 == cnt++) {
-                    System.out.println("Daily ToDo up to " + when.toString() + ":");
+                    System.out.println("Daily ToDo up to " + selectedDate.toString() + ":");
                 }
                 printTodoTaskItemNoStatus(i + 1, tt);
             }
         }
         if(0 == cnt) {
-            info("No tasks found up to " + when.toString());
+            info("No tasks found up to " + selectedDate.toString());
         }
     }
 
@@ -355,16 +340,14 @@ public class WPRConsoleMain {
      * @param args array of command line arguments
      * @param argIdx current command line parameter index
      */
-    private static void processCmdAdd(Weekly w, String[] args, int argIdx) throws IOException {
+    private static void processCmdAdd(Weekly w, List<String> args) throws IOException {
         if(!w.isEditable()) {
-            System.err.println("Error: can edit only current weekly plan");
+            System.err.println("Error: can edit only current weekly plan.");
         } else {
-            if(args.length == argIdx) {
-                System.err.println("Error: add operation requires task description.");
+            if(args.isEmpty()) {
+                System.err.println("Error: " + CMD_ADD + " command required task description.");
             } else {
-                String descr = args[argIdx];
-                w.getEditor().addTask(descr);
-                info("Task successfully created.");
+                w.getEditor().addTask(args.remove(0));
                 w.sync();
             }
         }
@@ -377,17 +360,18 @@ public class WPRConsoleMain {
      * @param args array of command line arguments
      * @param argIdx index of current command line parameter
      */
-    private static void processCmdComplete(Weekly w, String[] args, int argIdx) throws IOException {
+    private static void processCmdComplete(Weekly w, List<String> args) throws IOException {
         if(!w.isEditable()) {
-            System.err.println("Error: can edit only current weekly plan");
+            System.err.println("Error: can edit only current weekly plan.");
         } else {
-            if(args.length == argIdx) {
-                System.err.println("Error: completed operation requires task index number.");
+            if(args.isEmpty()) {
+                System.err.println("Error: " + CMD_COMPLETE + " operation requires task index number.");
             } else {
+                String taskIdxStr = args.remove(0);
                 try {
-                    int idx = Integer.parseInt(args[argIdx]);
+                    int idx = Integer.parseInt(taskIdxStr);
                     if((idx <= 0) || (idx > w.size())) {
-                        System.err.println("Error: cannot identify a task with the index - " + args[argIdx]);
+                        System.err.println("Error: cannot identify a task with the index - " + taskIdxStr);
                     } else {
                         TodoTask task = w.taskAt(idx - 1);
                         if(task.isCompleted()) {
@@ -400,7 +384,7 @@ public class WPRConsoleMain {
                         }
                     }
                 } catch(NumberFormatException nfe) {
-                    System.err.println("Error: cannot parse index value of " + args[argIdx]);
+                    System.err.println("Error: " + CMD_COMPLETE + " command cannot parse index value of " + taskIdxStr);
                 }
             }
         }
@@ -461,12 +445,16 @@ public class WPRConsoleMain {
      * @param args array of command line parameters
      * @param argIdx index of current command line parameter
      */
-    private static void processCmdSetmemo(Weekly w, String[] args, int argIdx) throws IOException {
+    private static void processCmdSetmemo(Weekly w, List<String> args) throws IOException {
         if(!w.isEditable()) {
-            System.err.println("Error: can edit only current weekly plan");
+            System.err.println("Error: can edit only current weekly plan.");
         } else {
-            w.getEditor().setMemo((args.length == argIdx) ? null : args[argIdx]);
-            w.sync();
+            if(args.size() == 0) {
+                System.err.println("Error: " + CMD_SETMEMO + " command needs argument of memo text.");
+            } else {
+                w.getEditor().setMemo(args.remove(0));
+                w.sync();
+            }
         }
     }
 
@@ -474,14 +462,10 @@ public class WPRConsoleMain {
      * Print list of known groups.
      */
     private static void processCmdGroups() {
-        File defaultDbDir = new File(DatabaseConfig.instance().getDefaultDatabasePath());
-        File[] dbList = defaultDbDir.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File arg0) {
-                // choose only accessible directories
-                return arg0.isDirectory() && arg0.canRead() && arg0.canWrite();
-            }
-        });
+        File defaultDbDir = new File(AppDatabase.getDefaultAppDatabasePath().toString());
+        File[] dbList = defaultDbDir.listFiles(
+            (File item) -> item.isDirectory() && item.canRead() && item.canWrite()
+        );
         if(0 == dbList.length) {
             info("No groups found.");
         } else {
@@ -494,29 +478,25 @@ public class WPRConsoleMain {
     /**
      * Copy uncompleted tasks from previous week to the current one.
      */
-    private static void processCmdCopyFromThePast(Weekly thisWeek) {
-        try {
-            if(thisWeek.size() != 0) {
-                System.err.println("Error: current week is not empty, cannot copy from previous week");
-            } else {
-                Weekly previousWeek = new Weekly(thisWeek.startedOn().shift(-7));
-                int cnt = 0;
-                for(int i = 0; i < previousWeek.size(); ++i) {
-                    TodoTask tt = previousWeek.taskAt(i);
-                    if(!tt.isCompleted()) {
-                        thisWeek.getEditor().addTask(tt.title());
-                        ++cnt;
-                    }
-                }
-                if(cnt == 0) {
-                    info("Warning: no unfinished tasks found, none is copied");
-                } else {
-                    info("Info: " + cnt + " tasks were copied");
-                    thisWeek.sync();
+    private static void processCmdCopyFromThePast(Weekly thisWeek) throws IOException {
+        if(thisWeek.size() != 0) {
+            System.err.println("Error: current week is not empty, copying from previous week is not possible.");
+        } else {
+            Weekly previousWeek = new Weekly(thisWeek.startedOn().shift(-7));
+            int cnt = 0;
+            for(int i = 0; i < previousWeek.size(); ++i) {
+                TodoTask tt = previousWeek.taskAt(i);
+                if(!tt.isCompleted()) {
+                    thisWeek.getEditor().addTask(tt.title());
+                    ++cnt;
                 }
             }
-        } catch(IOException ex) {
-            System.err.println("Error: database read/write unrecoverable error.");
+            if(cnt == 0) {
+                info("Warning: no unfinished tasks found, none is copied.");
+            } else {
+                info("Info: " + cnt + " tasks were copied.");
+                thisWeek.sync();
+            }
         }
     }
 
@@ -525,26 +505,34 @@ public class WPRConsoleMain {
      * @param msg string to be printed
      */
     private static void info(String msg) {
-        if(verbose) {
+        if(opt_verbose) {
             System.out.println(msg);
         }
     }
-
-    // Verbose output flag
-    private static boolean verbose = false;
 
     /**
      * Print utility title.
      */
     private static void printTitle() {
         System.out.println("This is Weekly Plans and Reports. Version " + VERSION);
-        System.out.println("Written by " + AUTHOR + " (mailto:" + MAILTO +
-            ") " + YEAR);
+        System.out.println("Written by " + AUTHOR + " (mailto:" + MAILTO + ") " + YEAR);
     }
 
-    private static final String VERSION = "0.2cj";
+    private static boolean opt_verbose = false;
+    private static boolean opt_do_copy_on_mondays = false;
+    
+    private static boolean opt_groups = false;
+    private static String groupName = null;
+    
+    private static boolean opt_date_selection = false;
+    
+    private static boolean opt_prev_week = false;
+    
+    private final static TaskDate selectedDate = new TaskDate();
+    
+    private static final String VERSION = "0.3cj";
     private static final String AUTHOR  = "Stas Torgashov";
-    private static final String YEAR = "2011-2014";
+    private static final String YEAR = "2011-2015";
     private static final String MAILTO = "stas.torgashov@outlook.com";
 
     /**
@@ -574,20 +562,6 @@ public class WPRConsoleMain {
         System.out.println("\t" + CMD_COPY_FROM_THE_PAST + " : copy uncompleted tasks from previous week (works only if current week is empty)");
     }
     
-    private static void processAppOptions(Weekly thisWeek) {
-        DatabaseConfig.IGlobalOptions globalOptions = DatabaseConfig.instance().getGlobalOptions();
-        if(globalOptions.doCopyFromThePastOnMondays()) {
-            if((new TaskDate().weekDay() == WeekDay.MONDAY) && (0 == thisWeek.size()))
-            {
-                processCmdCopyFromThePast(thisWeek);
-                System.out.println("Note: automatic copy-from-the-past option on Mondays is set on, copy is done");
-            }
-        }
-        if(globalOptions.isVerboseOutput()) {
-            verbose = true;
-        }
-    }
-
     /**
      * Utility options.
      */
