@@ -65,9 +65,21 @@ public class Weekly {
      */
     public Weekly() throws IOException {
         monday = new TaskDate().shiftToWeekDay(TaskDate.WeekDay.MONDAY);
+        dbbundle = AppDatabase.getFilesBundle(monday);
         load();
     }
-
+    
+    /**
+     * 
+     * @param groupName
+     * @throws IOException 
+     */
+    public Weekly(String groupName) throws IOException{
+        monday = new TaskDate().shiftToWeekDay(TaskDate.WeekDay.MONDAY);
+        dbbundle = AppDatabase.getFilesBundle(monday, groupName);
+        load();
+    }
+    
     /**
      * Ctor: create and load weekly database for the given date.
      * @param forDate date object reference
@@ -75,6 +87,19 @@ public class Weekly {
      */
     public Weekly(TaskDate forDate) throws IOException {
         monday = forDate.shiftToWeekDay(TaskDate.WeekDay.MONDAY);
+        dbbundle = AppDatabase.getFilesBundle(monday);
+        load();
+    }
+    
+    /**
+     * 
+     * @param forDate
+     * @param groupName
+     * @throws IOException 
+     */
+    public Weekly(TaskDate forDate, String groupName) throws IOException {
+        monday = forDate.shiftToWeekDay(TaskDate.WeekDay.MONDAY);
+        dbbundle = AppDatabase.getFilesBundle(monday, groupName);
         load();
     }
 
@@ -170,7 +195,6 @@ public class Weekly {
      * @throws IOException
      */
     private void load() throws IOException {
-        dbbundle = AppDatabase.getFilesBundle(monday);
         // verify checksum
         if(!dbbundle.checkConsistency()) {
             throw new ChecksumException();
