@@ -37,13 +37,22 @@ import org.crimcat.lib.wpr.AppDatabase;
 import org.crimcat.lib.wpr.TaskDate;
 
 /**
- *
- * @author Stas
+ * Implementation of files bundle class. 
+ * @author Stas Torgashov
  */
 public class FilesBundleImpl implements AppDatabase.FilesBundle {
-    // predefined file extentions for weekly database
+    
+    /**
+     * Extention for todos list file.
+     */
     private static final String EXT_TODOLIST = ".todolist";
+    /**
+     * Extention for memo file.
+     */
     private static final String EXT_MEMO = ".memo";
+    /**
+     * Extention for checksum file.
+     */
     private static final String EXT_CHECKSUM = ".checksum";
         
     public FilesBundleImpl(TaskDate td) {
@@ -138,6 +147,13 @@ public class FilesBundleImpl implements AppDatabase.FilesBundle {
         }
     }
     
+    /**
+     * Path to root database folder.
+     */
     private final Path rootDatabasePath;
+    
+    /**
+     * Base name to construct bundle elements names.
+     */
     private final String basename;
 }

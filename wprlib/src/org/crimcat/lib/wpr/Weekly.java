@@ -70,8 +70,8 @@ public class Weekly {
     }
     
     /**
-     * 
-     * @param groupName
+     * Ctor: create and load weekly database for today date and required group.
+     * @param groupName string with group name
      * @throws IOException 
      */
     public Weekly(String groupName) throws IOException{
@@ -92,9 +92,10 @@ public class Weekly {
     }
     
     /**
-     * 
-     * @param forDate
-     * @param groupName
+     * Ctor: create and load weekly database for the given date and given
+     * group name.
+     * @param forDate date object reference
+     * @param groupName string with group name
      * @throws IOException 
      */
     public Weekly(TaskDate forDate, String groupName) throws IOException {
@@ -261,14 +262,24 @@ public class Weekly {
         wasChanged = false;
     }
 
-    // Monday date object
+    /**
+     * Week monday date object.
+     */
     private TaskDate monday = null;
-    // List of todo tasks
+    /**
+     * List of todo tasks.
+     */
     private final ArrayList<TodoTask> tasks = new ArrayList<>();
-    // String with memo text
+    /**
+     * String with memo text. If empty - no memo.
+     */
     private String memoText = "";
-    // Weekly changes flag
+    /**
+     * Flag indicating that weekly data has been changed.
+     */
     private boolean wasChanged = false;
-    // Database manager object reference
+    /**
+     * Database manager object reference used to load this weekly.
+     */
     private AppDatabase.FilesBundle dbbundle = null;
 }

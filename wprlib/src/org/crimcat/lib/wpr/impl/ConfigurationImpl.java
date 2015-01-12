@@ -32,21 +32,21 @@ import java.util.Properties;
 import org.crimcat.lib.wpr.AppDatabase;
 
 /**
- *
- * @author Stas
+ * Implementation of application configuration.
+ * @author Stas Torgashov
  */
 public class ConfigurationImpl implements AppDatabase.Configuration {
     /**
-     * Default application config options file name
+     * Default application config options file name.
      */
     private static final String APP_CONFIG_FILE_NAME = ".global_config";
     
     /**
-     * Config option for automatic copy todo list from previous week on Mondays
+     * Config option for automatic copy todo list from previous week on Mondays.
      */
     private static final String APP_OPTION_AUTO_COPY_FROM_THE_PAST = "auto-copy-from-the-past";
     /**
-     * Config option for verbose output on commands execution
+     * Config option for verbose output on commands execution.
      */
     private static final String APP_OPTION_VERBOSE_OUTPUT = "verbose-output";
     
@@ -78,5 +78,8 @@ public class ConfigurationImpl implements AppDatabase.Configuration {
         return "true".equalsIgnoreCase(prop);
     }
     
+    /**
+     * Properties read from configuration file.
+     */
     Properties config = new Properties();
 }
