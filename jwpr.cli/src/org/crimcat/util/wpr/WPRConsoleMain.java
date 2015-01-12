@@ -80,6 +80,11 @@ public class WPRConsoleMain {
         }
     }
 
+    /**
+     * Read and store command line options if any.
+     * @param args list with command line arguments (the list is modified - recognized options are extracted)
+     * @return true if there were no errors processing command line option
+     */
     private static boolean readOptions(List<String> args) {
         for(String arg : args) {
             if(arg.charAt(0) == '-') {
@@ -131,6 +136,13 @@ public class WPRConsoleMain {
         return true;
     }
     
+    /**
+     * Read command from the command line, parse it and its parameters and
+     * execute if we can.
+     * @param args list with remaining part of the command line (list is modified - parsed elements are extracted)
+     * @param weekly loaded weekly object to apply command on
+     * @throws IOException 
+     */
     private static void readAndExecuteCommand(List<String> args, Weekly weekly) throws IOException {
         String expectedCmd = args.remove(0);
         switch(expectedCmd) {
@@ -250,6 +262,9 @@ public class WPRConsoleMain {
     private static final String CMD_GROUPS = "groups";
     private static final String CMD_COPY_FROM_THE_PAST = "copy-from-the-past";
     
+    /**
+     * Distance dictionary made of application commands.
+     */
     private static final DistanceDictionary distanceDict = new DistanceDictionary(
         new String[] {
             CMD_HELP,
@@ -518,18 +533,37 @@ public class WPRConsoleMain {
         System.out.println("Written by " + AUTHOR + " (mailto:" + MAILTO + ") " + YEAR);
     }
 
+    /**
+     * Flag if verbose option is selected.
+     */
     private static boolean opt_verbose = false;
+    /**
+     * Flag if automatic copy on mondays is selected.
+     */
     private static boolean opt_do_copy_on_mondays = false;
-    
+    /**
+     * Flag if group selector was used.
+     */
     private static boolean opt_groups = false;
+    /**
+     * Group name, has meaning only if <code>opt_groups == true</code>.
+     */
     private static String groupName = null;
-    
+    /**
+     * Flag if target week date is selected.
+     */
     private static boolean opt_date_selection = false;
-    
+    /**
+     * Flag if previous week is selected.
+     */
     private static boolean opt_prev_week = false;
     
+    /**
+     * Selected date for which weekly is loaded.
+     */
     private final static TaskDate selectedDate = new TaskDate();
     
+    // Application information
     private static final String VERSION = "0.3cj";
     private static final String AUTHOR  = "Stas Torgashov";
     private static final String YEAR = "2011-2015";
